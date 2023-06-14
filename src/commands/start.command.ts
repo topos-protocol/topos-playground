@@ -132,16 +132,20 @@ export class StartCommand extends CommandRunner {
     return of(
       defer(() => of(this._log('Cloning repositories...'))),
       this._cloneGitRepository(
-        'toposware',
-        'full-msg-protocol-infra',
+        'topos-network',
+        'local-erc20-messaging-infra',
         '0.1.0-alpha'
       ),
       this._cloneGitRepository(
-        'toposware',
-        'dapp-frontend-cross-subnet',
+        'topos-network',
+        'dapp-frontend-erc20-messaging',
         '0.1.0-alpha'
       ),
-      this._cloneGitRepository('toposware', 'executor-service', '0.1.0-alpha'),
+      this._cloneGitRepository(
+        'topos-network',
+        'executor-service',
+        '0.1.0-alpha'
+      ),
       defer(() => of(this._log('')))
     ).pipe(concatAll())
   }
@@ -191,11 +195,11 @@ export class StartCommand extends CommandRunner {
       defer(() => of(this._log('Copying .env files across repositories...'))),
       this._copyEnvFile(
         '.env.dapp-frontend',
-        `${this._workingDir}/dapp-frontend-cross-subnet/packages/frontend`
+        `${this._workingDir}/dapp-frontend-erc20-messaging/packages/frontend`
       ),
       this._copyEnvFile(
         '.env.dapp-backend',
-        `${this._workingDir}/dapp-frontend-cross-subnet/packages/backend`
+        `${this._workingDir}/dapp-frontend-erc20-messaging/packages/backend`
       ),
       this._copyEnvFile(
         '.env.executor-service',
@@ -295,10 +299,10 @@ export class StartCommand extends CommandRunner {
 
   private _runFullMsgProtocolInfra() {
     const secretsFilePath = `${this._workingDir}/.env.secrets`
-    const executionPath = `${this._workingDir}/full-msg-protocol-infra`
+    const executionPath = `${this._workingDir}/local-erc20-messaging-infra`
 
     return of(
-      defer(() => of(this._log(`Running the full message protocol infra...`))),
+      defer(() => of(this._log(`Running the ERC20 messaging infra...`))),
       this._spawn.reactify(
         `source ${secretsFilePath} && cd ${executionPath} && docker compose up -d`
       ),
@@ -360,7 +364,7 @@ export class StartCommand extends CommandRunner {
 
   private _rundDappFrontendService() {
     const secretsFilePath = `${this._workingDir}/.env.secrets`
-    const executionPath = `${this._workingDir}/dapp-frontend-cross-subnet`
+    const executionPath = `${this._workingDir}/dapp-frontend-erc20-messaging`
 
     return of(
       defer(() => of(this._log(`Running the dApp Frontend...`))),

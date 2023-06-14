@@ -68,12 +68,10 @@ export class CleanCommand extends CommandRunner {
   }
 
   private _shutdownFullMsgProtocolInfra() {
-    const executionPath = `${this._workingDir}/full-msg-protocol-infra`
+    const executionPath = `${this._workingDir}/local-erc20-messaging-infra`
 
     return of(
-      defer(() =>
-        of(this._log(`Shutting down the full message protocol infra...`))
-      ),
+      defer(() => of(this._log(`Shutting down the ERC20 messaging infra...`))),
       this._spawn.reactify(`cd ${executionPath} && docker compose down -v`),
       defer(() => of(this._log(`✅ subnets & TCE are down`), this._log(``)))
     ).pipe(concatAll())
