@@ -1,6 +1,6 @@
 {
-  "name": "@topos-network/topos-playground",
-  "version": "0.0.1-alpha12",
+  "name": "@topos-protocol/topos-playground",
+  "version": "0.0.1",
   "description": "CLI to run local Topos devnets with subnets, a TCE network, and apps",
   "author": "Sébastien Dan <sebastien.dan@gmail.com>",
   "license": "MIT",
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/topos-network/topos-playground.git"
+    "url": "git+https://github.com/topos-protocol/topos-playground.git"
   },
   "scripts": {
     "build": "nest build",

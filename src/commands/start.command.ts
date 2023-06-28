@@ -1,13 +1,16 @@
 import { randomUUID } from 'crypto'
-import { readFile, stat, writeFile } from 'fs'
+import { readFile, stat } from 'fs'
 import { Command, CommandRunner, InquirerService } from 'nest-commander'
 import { concatAll, tap } from 'rxjs/operators'
 import { defer, Observable, of } from 'rxjs'
 
 import { Next, ReactiveSpawn } from '../ReactiveSpawn'
-import { SecretAnswers } from '../questions/secrets.questions'
 import { workingDir } from 'src/constants'
 import { createLoggerFile, loggerConsole } from 'src/loggers'
+
+const INFRA_REF = 'v0.1.3'
+const FRONTEND_REF = 'v0.1.0-alpha3'
+const EXECUTOR_SERVICE_REF = 'v0.1.1'
 
 @Command({ name: 'start', description: 'Run everything' })
 export class StartCommand extends CommandRunner {
@@ -32,8 +35,8 @@ export class StartCommand extends CommandRunner {
       this._createWorkingDirectoryIfInexistant(),
       this._cloneGitRepositories(),
       this._copyEnvFiles(),
-      this._verifySecrets(),
-      this._runFullMsgProtocolInfra(),
+      this._runLocalERC20MessagingInfra(),
+      this._retrieveAndWriteContractAddressesToEnv(),
       this._runRedis(),
       this._runExecutorService(),
       this._rundDappFrontendService()
@@ -132,19 +135,19 @@ export class StartCommand extends CommandRunner {
     return of(
       defer(() => of(this._log('Cloning repositories...'))),
       this._cloneGitRepository(
-        'topos-network',
+        'topos-protocol',
         'local-erc20-messaging-infra',
-        '0.1.0-alpha'
+        INFRA_REF
       ),
       this._cloneGitRepository(
-        'topos-network',
+        'topos-protocol',
         'dapp-frontend-erc20-messaging',
-        '0.1.0-alpha'
+        FRONTEND_REF
       ),
       this._cloneGitRepository(
-        'topos-network',
+        'topos-protocol',
         'executor-service',
-        '0.1.0-alpha'
+        EXECUTOR_SERVICE_REF
       ),
       defer(() => of(this._log('')))
     ).pipe(concatAll())
@@ -205,13 +208,17 @@ export class StartCommand extends CommandRunner {
         '.env.executor-service',
         `${this._workingDir}/executor-service`
       ),
+      this._copyEnvFile('.env.secrets', `${this._workingDir}`, `.env.secrets`),
       defer(() => of(this._log('')))
     ).pipe(concatAll())
   }
 
-  private _copyEnvFile(localEnvFileName: string, destinationDirectory: string) {
+  private _copyEnvFile(
+    localEnvFileName: string,
+    destinationDirectory: string,
+    destinationFileName = '.env'
+  ) {
     return new Observable((subscriber) => {
-      const destinationFileName = '.env'
       const destinationFilePath = `${destinationDirectory}/${destinationFileName}`
 
       stat(destinationFilePath, (error) => {
@@ -241,63 +248,7 @@ export class StartCommand extends CommandRunner {
     })
   }
 
-  private _verifySecrets() {
-    return new Observable((subscriber) => {
-      this._log(`Setting secrets...`)
-
-      const path = `${this._workingDir}/.env.secrets`
-
-      stat(path, (error) => {
-        if (error) {
-          this._log(`No secrets file have been found so one will be created`)
-          this._log(``)
-          this._askForSecrets().subscribe(subscriber)
-        } else {
-          this._log(`✅ A local secrets file has been found and will be used`)
-          this._log(``)
-          subscriber.complete()
-        }
-      })
-    })
-  }
-
-  private _askForSecrets() {
-    return new Observable((subscriber) => {
-      this.inquirer
-        .ask<SecretAnswers>('secrets-questions', undefined)
-        .then(
-          ({
-            privateKey,
-            tokenDeployerSalt,
-            toposCoreSalt,
-            toposCoreProxySalt,
-            toposMessagingSalt,
-            subnetRegistratorSalt,
-            auth0ClientId,
-            auth0ClientSecret,
-          }) => {
-            writeFile(
-              `${this._workingDir}/.env.secrets`,
-              `export PRIVATE_KEY=${privateKey}
-               export TOKEN_DEPLOYER_SALT=${tokenDeployerSalt}
-               export TOPOS_CORE_SALT=${toposCoreSalt}
-               export TOPOS_CORE_PROXY_SALT=${toposCoreProxySalt}
-               export TOPOS_MESSAGING_SALT=${toposMessagingSalt}
-               export SUBNET_REGISTRATOR_SALT=${subnetRegistratorSalt}
-               export AUTH0_CLIENT_ID=${auth0ClientId}
-               export AUTH0_CLIENT_SECRET=${auth0ClientSecret}
-          `,
-              () => {
-                this._log(``)
-                subscriber.complete()
-              }
-            )
-          }
-        )
-    })
-  }
-
-  private _runFullMsgProtocolInfra() {
+  private _runLocalERC20MessagingInfra() {
     const secretsFilePath = `${this._workingDir}/.env.secrets`
     const executionPath = `${this._workingDir}/local-erc20-messaging-infra`
 
@@ -307,6 +258,34 @@ export class StartCommand extends CommandRunner {
         `source ${secretsFilePath} && cd ${executionPath} && docker compose up -d`
       ),
       defer(() => of(this._log(`✅ Subnets & TCE are running`), this._log(``)))
+    ).pipe(concatAll())
+  }
+
+  private _retrieveAndWriteContractAddressesToEnv() {
+    const frontendEnvFilePath = `${this._workingDir}/dapp-frontend-erc20-messaging/packages/frontend/.env`
+    const executorServiceEnvFilePath = `${this._workingDir}/executor-service/.env`
+
+    return of(
+      defer(() => of(this._log(`Retrieving contract addresses...`))),
+      this._spawn.reactify(
+        `docker cp contracts-topos:/contracts/.env ${this._workingDir}/.env.addresses`
+      ),
+      this._spawn.reactify(
+        `source ${this._workingDir}/.env.addresses \
+        && echo "VITE_SUBNET_REGISTRATOR_CONTRACT_ADDRESS=$SUBNET_REGISTRATOR_CONTRACT_ADDRESS" >> ${frontendEnvFilePath} \
+        && echo "VITE_TOPOS_CORE_CONTRACT_ADDRESS=$TOPOS_CORE_PROXY_CONTRACT_ADDRESS" >> ${frontendEnvFilePath} \
+        && echo "VITE_ERC20_MESSAGING_CONTRACT_ADDRESS=$ERC20_MESSAGING_CONTRACT_ADDRESS" >> ${frontendEnvFilePath} \
+        && echo "SUBNET_REGISTRATOR_CONTRACT_ADDRESS=$SUBNET_REGISTRATOR_CONTRACT_ADDRESS" >> ${executorServiceEnvFilePath} \
+        && echo "TOPOS_CORE_CONTRACT_ADDRESS=$TOPOS_CORE_PROXY_CONTRACT_ADDRESS" >> ${executorServiceEnvFilePath}`
+      ),
+      defer(() =>
+        of(
+          this._log(
+            `✅ Contract addresses were retrieved and written to env files`
+          ),
+          this._log(``)
+        )
+      )
     ).pipe(concatAll())
   }
 
