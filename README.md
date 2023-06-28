@@ -14,14 +14,14 @@
 
 ### Requirements
 
+- Git
 - NodeJS (tested with 16+)
 - Docker
-- Git (with SSH access to [dapp-frontend-cross-subnet](github.com/toposware/dapp-frontend-cross-subnet/), [executor-service](https://github.com/toposware/executor-service), and [full-msg-protocol-infra](https://github.com/toposware/full-msg-protocol-infra))
 
 ### [Optional] Install the package globally
 
 ```
-$ npm install -g @topos-network/topos-playground
+$ npm install -g @topos-protocol/topos-playground
 ```
 
 ### Run the CLI
@@ -35,5 +35,19 @@ $ topos-playground [start|clean]
 Otherwise, you can use `npx` to abstract the installation
 
 ```
-$ npx @topos-network/topos-plaground [start|clean]
+$ npx @topos-protocol/topos-plaground [start|clean]
+```
+
+## Development
+
+### Build
+
+```
+npm run build
+```
+
+### Rum
+
+```
+node dist/main [start|clean]
 ```
