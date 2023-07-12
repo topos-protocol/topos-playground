@@ -8,7 +8,7 @@ import { Next, ReactiveSpawn } from '../ReactiveSpawn'
 import { workingDir } from 'src/constants'
 import { createLoggerFile, loggerConsole } from 'src/loggers'
 
-const INFRA_REF = 'v0.1.3'
+const INFRA_REF = 'v0.1.5'
 const FRONTEND_REF = 'v0.1.0-alpha3'
 const EXECUTOR_SERVICE_REF = 'v0.1.1'
 
