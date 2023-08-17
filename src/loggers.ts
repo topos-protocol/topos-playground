@@ -28,3 +28,34 @@ export function createLoggerFile(logFilePath: string) {
     ],
   })
 }
+
+function logConsole() {
+  return globalThis.lconsole
+}
+
+function logFile() {
+  if (!globalThis.loggerFile) globalThis.loggerFile = createLoggerFile(globalThis.no_log ? '/dev/null' : globalThis.logFilePath)
+
+  return globalThis.loggerFile
+}
+
+export function log(logMessage: string, overrideQuiet: boolean = false) {
+  let lines = logMessage.split('\n')
+
+  for (let line of lines) {
+    if (overrideQuiet || !globalThis.quiet) logConsole().info(line)
+    logFile().info(line)
+  }
+}
+
+export function logError(errorMessage: string) {
+  let lines = errorMessage.split('\n')
+
+  for (let line of lines) {
+    logConsole().error(line)
+    logFile().error(line)
+  }
+
+  logConsole().error(`Find more details in ${globalThis.logFilePath}`)
+  logFile().error(`Find more details in ${globalThis.logFilePath}`)
+}

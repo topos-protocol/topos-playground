@@ -1,52 +1,44 @@
 import { stat } from 'fs'
+import { join } from 'path'
+
 import { Command, CommandRunner } from 'nest-commander'
 import { concatAll } from 'rxjs/operators'
 import { defer, EMPTY, Observable, of } from 'rxjs'
 import { homedir } from 'os'
 
 import { Next, ReactiveSpawn } from '../ReactiveSpawn'
-import { workingDir } from 'src/constants'
-import { createLoggerFile, loggerConsole } from 'src/loggers'
-import { randomUUID } from 'crypto'
+import { log, logError } from 'src/loggers'
 
 @Command({
   name: 'clean',
   description: 'Clean artifacts from a previous start',
 })
 export class CleanCommand extends CommandRunner {
-  private _workingDir = workingDir
-  private _loggerConsole = loggerConsole
-  private _logFilePath = `logs/log-${randomUUID()}.log`
-  private _loggerFile = createLoggerFile(this._logFilePath)
-
   constructor(private _spawn: ReactiveSpawn) {
     super()
   }
 
   async run(): Promise<void> {
-    this._log(`Welcome to Topos-Playground!`)
-    this._log(``)
+    log(`Cleaning up Topos-Playground!`)
+    log(``)
 
     of(
+      this._verifyExecutionPathExistence(),
       this._verifyWorkingDirectoryExistence(),
       this._shutdownFullMsgProtocolInfra(),
       this._shutdownRedis(),
-      this._removeWorkingDir()
+      this._removeworkingDir()
     )
       .pipe(concatAll())
       .subscribe({
         complete: () => {
-          this._log(`🧹 Everything is clean! 🧹`)
-          this._log(`Logs were written to ${this._logFilePath}`)
+          log(`🧹 Everything is clean! 🧹`)
+          log(`Logs were written to ${globalThis.logFilePath}`)
         },
         error: () => {},
         next: (data: Next) => {
-          if (data && data.hasOwnProperty('origin')) {
-            if (data.origin === 'stderr') {
-              this._loggerFile.error(data.output)
-            } else if (data.origin === 'stdout') {
-              this._loggerFile.info(data.output)
-            }
+          if (data && data.hasOwnProperty('output')) {
+            log(`${data.output}`)
           }
         },
       })
@@ -54,13 +46,31 @@ export class CleanCommand extends CommandRunner {
 
   private _verifyWorkingDirectoryExistence() {
     return new Observable((subscriber) => {
-      stat(this._workingDir, (error) => {
+      stat(globalThis.workingDir, (error) => {
+        console.log("verify working directory existence")
         if (error) {
-          this._logError(
-            `Working directory have not been found, nothing to clean!`
+          logError(
+            `The working directory (${globalThis.workingDir}) can not been found; nothing to clean!`
           )
           subscriber.error()
         } else {
+          log(`Cleaning working directory (${globalThis.workingDir})...`)
+          subscriber.complete()
+        }
+      })
+    })
+  }
+
+  private _verifyExecutionPathExistence() {
+    console.log(`verify execution path ${globalThis.executionPath}`)
+    return new Observable((subscriber) => {
+      stat(globalThis.executionPath, (error) => {
+        console.log("verify execution path existence")
+        if (error) {
+          globalThis.executionPath_exists = false
+          subscriber.complete()
+        } else {
+          globalThis.executionPath_exists = true
           subscriber.complete()
         }
       })
@@ -68,38 +78,58 @@ export class CleanCommand extends CommandRunner {
   }
 
   private _shutdownFullMsgProtocolInfra() {
-    const executionPath = `${this._workingDir}/local-erc20-messaging-infra`
+    console.log("do shutdown stuff")
 
-    return of(
-      defer(() => of(this._log(`Shutting down the ERC20 messaging infra...`))),
-      this._spawn.reactify(`cd ${executionPath} && docker compose down -v`),
-      defer(() => of(this._log(`✅ subnets & TCE are down`), this._log(``)))
+    console.log("do return blah blah shutoff")
+    return of(  
+      defer(() => of(console.log("A*"))),
+      defer(() => of(!globalThis.executionPath_exists ? log(`✅ ERC20 messaging infra is not running; subnets & TCE are down`) : null)),
+      defer(() => of(globalThis.executionPath_exists ? log(`Shutting down the ERC20 messaging infra...`) : null)),
+      defer(() => this._spawn.reactify(`cd ${globalThis.executionPath} && docker compose down -v`)),
+      defer(() => of(log(`✅ subnets & TCE are down`), log(``)))
     ).pipe(concatAll())
   }
 
   private _shutdownRedis() {
     const containerName = 'redis-stack-server'
+    let container_running = false
 
     return of(
-      defer(() => of(this._log(`Shutting down the redis server...`))),
-      this._spawn.reactify(`docker rm -f ${containerName}`),
-      defer(() => of(this._log(`✅ redis is down`), this._log(``)))
-    ).pipe(concatAll())
+      new Observable((subscriber) => {
+        this._spawn.reactify(`docker ps --format '{{.Names}}' | grep ${containerName}`).subscribe({
+          next: (data: Next) => {
+            if (data && data.output && `${data.output}`.indexOf(containerName) !== -1) {
+              container_running = true
+            }
+          },
+          error: () => { subscriber.error() },
+          complete: () => { subscriber.complete() }
+        })
+      }),
+      defer(() => of(log(`Container running: ${container_running}`))),
+      defer(() => of(log(container_running ? `✅ redis is not running; nothing to shut down` : `Shutting down the redis server...`))),
+      new Observable((subscriber) => {
+        this._spawn.reactify(`docker rm -f ${containerName}`).subscribe({
+          next: (data: Next) => { subscriber.next(data) },
+          error: (data) => { subscriber.error(data) },
+          complete: () => { subscriber.complete() }
+        })
+      }),
+      defer(() => of(log(container_running ? `✅ redis is down\n` : ``)))).pipe(concatAll())
   }
 
-  private _removeWorkingDir() {
+  private _removeworkingDir() {
     const homeDir = homedir()
 
     return of(
-      defer(() => of(this._log(`Removing the working directory...`))),
-      // Let's make sure we're not removing something we shouldn't
-      this._workingDir.indexOf(homeDir) !== -1 && this._workingDir !== homeDir
+      defer(() => of(log(`Removing the working directory...`))),
+      globalThis.workingDir.indexOf(homeDir) !== -1 && globalThis.workingDir !== homeDir
         ? of(
-            this._spawn.reactify(`rm -rf ${this._workingDir}`),
+            this._spawn.reactify(`rm -rf ${globalThis.workingDir}`),
             defer(() =>
               of(
-                this._log('✅ Working directory has been removed'),
-                this._log(``)
+                log('✅ Working directory has been removed'),
+                log(``)
               )
             )
           ).pipe(concatAll())
@@ -107,24 +137,14 @@ export class CleanCommand extends CommandRunner {
             EMPTY,
             defer(() =>
               of(
-                this._logError(
-                  `Working directory (${this._workingDir}) is not safe for removal!`
+                logError(
+                  `Working directory (${globalThis.workingDir}) is not safe for removal!`
                 ),
-                this._log(``)
+                log(``)
               )
             )
           ).pipe(concatAll())
     ).pipe(concatAll())
   }
 
-  private _log(logMessage: string) {
-    this._loggerConsole.info(logMessage)
-    this._loggerFile.info(logMessage)
-  }
-
-  private _logError(errorMessage: string) {
-    this._loggerConsole.error(errorMessage)
-    this._loggerFile.error(errorMessage)
-    this._loggerConsole.error(`👉 Find more details in ${this._logFilePath}`)
-  }
 }
