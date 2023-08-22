@@ -10,7 +10,7 @@ const INFRA_REF = 'v0.1.5'
 const FRONTEND_REF = 'v0.1.0-alpha3'
 const EXECUTOR_SERVICE_REF = 'v0.1.1'
 
-@Command({ name: 'start', description: 'Run everything' })
+@Command({ name: 'start', description: 'Verify that all dependencies are installed, clone any needed repositories, setup the environment, and start all of the docker containers for the Playground' })
 export class StartCommand extends CommandRunner {
 
   constructor(
@@ -21,7 +21,7 @@ export class StartCommand extends CommandRunner {
   }
 
   async run(): Promise<void> {
-    log(`Starting Topos-Playground!`)
+    log(`Starting Topos-Playground...`)
     log(``)
 
     of(

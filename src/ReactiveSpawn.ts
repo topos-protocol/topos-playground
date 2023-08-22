@@ -1,6 +1,7 @@
 import { ChildProcess, spawn } from 'child_process'
 import { userInfo } from 'os'
 import { Observable } from 'rxjs'
+import { log, logError } from 'src/loggers'
 
 export interface Next {
   origin: 'stdout' | 'stderr'
@@ -12,6 +13,9 @@ export class ReactiveSpawn {
 
   reactify(command: string, options?: { runInBackground }) {
     return new Observable<Next>((subscriber) => {
+      if (globalThis.verbose) {
+        log(`🏃  Running command: ${command}`)
+      }
       const childProcess = spawn(command, { ...options, shell: this._shell })
 
       if (options && options.runInBackground) {

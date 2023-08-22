@@ -2,16 +2,18 @@ import { mkdir } from 'fs'
 import { join } from 'path'
 import { randomUUID } from 'crypto'
 import { loggerConsole, logError } from 'src/loggers'
-
+import { config } from 'dotenv'
+config()
 
 declare global {
   var verbose: boolean
   var quiet: boolean
   var no_log: boolean
   var workingDir: string
+  var workingDirExists: boolean
   var logDir: string
   var executionPath: string
-  var executionPath_exists: boolean
+  var executionPathExists: boolean
   var lconsole: typeof loggerConsole
   var logFilePath : string
   var loggerFile
@@ -21,8 +23,8 @@ export function setupGlobals() {
   // Setup global configuration
 
   let home = process.env.HOME || '.'
-  let data_home = join(home, '.local', 'share')
-  let state_home = join(home, '.local', 'state')
+  let data_home = process.env.XDG_DATA_HOME || join(home, '.local', 'share')
+  let state_home = process.env.XDG_STATE_HOME || join(home, '.local', 'state')
   
   globalThis.workingDir = join(data_home, 'topos-playground')
   globalThis.logDir = join(state_home, 'topos-playground/logs')

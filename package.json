@@ -18,6 +18,7 @@
   "dependencies": {
     "@nestjs/common": "^9.0.0",
     "@nestjs/core": "^9.0.0",
+    "dotenv": "^16.3.1",
     "ethers": "^5.7.2",
     "nest-commander": "^3.7.1",
     "winston": "^3.8.2"

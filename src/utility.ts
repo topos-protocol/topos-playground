@@ -31,14 +31,15 @@ export function breakText(str: string, n: number = 60): string {
   for (let i = 0; i < str.length; i++) {
     let char = str[i]
     if (char === " " || i === str.length - 1) {
-      if (line.length + word.length < n || word.length >= n) {
+      if (line.length + word.length < n) {
         line += word + (i === str.length - 1 && char !== " " ? char : " ")
         word = ""
       } else {
         if ((((line.length + word.length) > n) && ((n - line.length) > maxWordLength)) || i === str.length - 1) {
-          while(word.length > maxWordLength) {
-            let part = word.substring(0, n - line.length - 1)
-            let remaining = word.substring(n - line.length - 1)
+          let first_character = word[0]
+          if (first_character.toLowerCase() != first_character.toUpperCase() && word.length > maxWordLength) {
+            let part = word.substring(0, maxWordLength - 1)
+            let remaining = word.substring(maxWordLength - 1)
             lines.push(line + part + (remaining.length > 0 ? "-" : ""))
             line = ""
             word = remaining

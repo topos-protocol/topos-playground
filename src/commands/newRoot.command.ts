@@ -6,8 +6,19 @@ import { RootCommand, Option, CommandRunner } from 'nest-commander'
 import { ReactiveSpawn } from '../ReactiveSpawn'
 import { log } from 'src/loggers'
 
+const helptext = `
+
+Configuration
+
+topos-playground follows the XDG Base Directory Specification, which means that data files for use during runs of the playground are store in $XDG_DATA_HOME/topos-playground, which defaults to $HOME/.local/share/topos-playground and log files are stored in $XDG_STATE_HOME/topos-playground/logs, which defaults to $HOME/.local/state/topos-playground/logs.
+
+These locations can be overridden by setting the environment variables HOME, XDG_DATA_HOME, and XDG_STATE_HOME.
+`.trim()
+
+const columns = process.stdout.columns || 80
+
 @RootCommand({
-  description: `${breakText(description)}\n`,
+  description: `${breakText(description, columns)}\n\n${breakText(helptext, columns)}`,
 })
   
 export class NewRootCommand extends CommandRunner {
