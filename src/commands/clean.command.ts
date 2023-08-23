@@ -39,11 +39,7 @@ export class CleanCommand extends CommandRunner {
           this._shutdownFullMsgProtocolInfra(),
           this._shutdownRedis(),
           this._removeWorkingDirectory()
-        ).subscribe({
-          next: () => {},
-          complete: () => {},
-          error: () => {},
-        })
+        ).subscribe()
       })
     })
   }
@@ -170,16 +166,6 @@ export class CleanCommand extends CommandRunner {
           innerSubscriber.complete()
         })
       ).subscribe(subscriber)
-        next: (data: Next) => {
-          subscriber.next(data)
-        },
-        error: () => {
-          subscriber.error()
-        },
-        complete: () => {
-          subscriber.complete()
-        },
-      })
     })
   }
 
