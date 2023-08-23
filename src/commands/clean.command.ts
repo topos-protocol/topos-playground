@@ -94,8 +94,9 @@ export class CleanCommand extends CommandRunner {
 
   private _shutdownFullMsgProtocolInfra() {
     return new Observable((subscriber) => {
+      log('')
       if (globalThis.executionPathExists) {
-        log(`\nShutting down the ERC20 messaging infra...`)
+        log(`Shutting down the ERC20 messaging infra...`)
         this._spawn
           .reactify(`cd ${globalThis.executionPath} && docker compose down -v`)
           .subscribe({
@@ -111,7 +112,7 @@ export class CleanCommand extends CommandRunner {
           })
         log(`✅ subnets & TCE are down`)
       } else {
-        log(`\n✅ ERC20 messaging infra is not running; subnets & TCE are down`)
+        log(`✅ ERC20 messaging infra is not running; subnets & TCE are down`)
       }
     })
   }
@@ -145,8 +146,9 @@ export class CleanCommand extends CommandRunner {
             })
         }),
         new Observable((innerSubscriber) => {
+          log('')
           if (containerRunning) {
-            log(`\nShutting down the redis server...`)
+            log(`Shutting down the redis server...`)
 
             this._spawn.reactify(`docker rm -f ${containerName}`).subscribe({
               next: (data: Next) => {
@@ -158,7 +160,7 @@ export class CleanCommand extends CommandRunner {
             })
             log(`✅ redis is down`)
           } else {
-            log(`\n✅ redis is not running; nothing to shut down`)
+            log(`✅ redis is not running; nothing to shut down`)
           }
         }),
         new Observable((innerSubscriber) => {
@@ -176,7 +178,8 @@ export class CleanCommand extends CommandRunner {
         globalThis.workingDir.indexOf(homeDir) !== -1 &&
         globalThis.workingDir !== homeDir
       ) {
-        log(`\nCleaning up the working directory (${globalThis.workingDir})`)
+        log('')
+        log(`Cleaning up the working directory (${globalThis.workingDir})`)
         this._spawn.reactify(`rm -rf ${globalThis.workingDir}`).subscribe({
           next: (data: Next) => {
             subscriber.next(data)
