@@ -22,7 +22,6 @@ export class CleanCommand extends CommandRunner {
 
     this._verifyWorkingDirectoryExistence().subscribe(() => {
       this._verifyExecutionPathExistence().subscribe(() => {
-
         // Coordinate the steps to clean up the environment
         concat(
           this._shutdownFullMsgProtocolInfra(),
@@ -38,7 +37,9 @@ export class CleanCommand extends CommandRunner {
       stat(globalThis.workingDir, (error, stats) => {
         if (error) {
           globalThis.workingDirExists = false
-          log(`Working directory (${globalThis.workingDir}) is not found; nothing to clean.`)
+          log(
+            `Working directory (${globalThis.workingDir}) is not found; nothing to clean.`
+          )
           subscriber.next()
           subscriber.complete()
         } else if (!stats.isDirectory()) {
@@ -59,7 +60,9 @@ export class CleanCommand extends CommandRunner {
 
             if (files.length === 0) {
               globalThis.workingDirExists = false
-              log(`Working directory (${globalThis.workingDir}) is empty; nothing to clean.`)
+              log(
+                `Working directory (${globalThis.workingDir}) is empty; nothing to clean.`
+              )
               subscriber.next()
               subscriber.complete()
             } else {
@@ -113,6 +116,7 @@ export class CleanCommand extends CommandRunner {
         log(`✅ subnets & TCE are down`)
       } else {
         log(`✅ ERC20 messaging infra is not running; subnets & TCE are down`)
+        subscriber.complete()
       }
     })
   }
@@ -162,8 +166,6 @@ export class CleanCommand extends CommandRunner {
           } else {
             log(`✅ redis is not running; nothing to shut down`)
           }
-        }),
-        new Observable((innerSubscriber) => {
           innerSubscriber.complete()
         })
       ).subscribe(subscriber)
