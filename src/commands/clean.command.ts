@@ -169,7 +169,7 @@ export class CleanCommand extends CommandRunner {
         new Observable((innerSubscriber) => {
           innerSubscriber.complete()
         })
-      ).subscribe({
+      ).subscribe(subscriber)
         next: (data: Next) => {
           subscriber.next(data)
         },
