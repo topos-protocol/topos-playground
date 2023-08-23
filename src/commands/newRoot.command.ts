@@ -3,7 +3,7 @@ import { RootCommand, Option, CommandRunner } from 'nest-commander'
 
 import { ReactiveSpawn } from '../ReactiveSpawn'
 import { log } from '../loggers'
-const { version, description } = require('../../package.json');
+const { version, description } = require('../../package.json')
 
 const helptext = `
 
@@ -17,17 +17,17 @@ These locations can be overridden by setting the environment variables HOME, XDG
 const columns = process.stdout.columns || 80
 
 @RootCommand({
-  description: `${breakText(description, columns)}\n\n${breakText(helptext, columns)}`,
+  description: `${breakText(description, columns)}\n\n${breakText(
+    helptext,
+    columns
+  )}`,
 })
-  
 export class NewRootCommand extends CommandRunner {
   constructor(private _spawn: ReactiveSpawn) {
-
     super()
   }
 
-  async run(): Promise<void> {
-  }
+  async run(): Promise<void> {}
 
   @Option({
     flags: '--version',
@@ -40,7 +40,10 @@ export class NewRootCommand extends CommandRunner {
 
   @Option({
     flags: '-v, --verbose',
-    description: breakText(`Show more information about the execution of a command`, 39),
+    description: breakText(
+      `Show more information about the execution of a command`,
+      39
+    ),
   })
   doVerbose() {
     globalThis.verbose = true
@@ -48,7 +51,10 @@ export class NewRootCommand extends CommandRunner {
 
   @Option({
     flags: '-q, --quiet',
-    description: breakText(`Show minimal onscreen information about the execution of a command`, 39),
+    description: breakText(
+      `Show minimal onscreen information about the execution of a command`,
+      39
+    ),
   })
   doQuiet() {
     globalThis.quiet = true
@@ -61,5 +67,4 @@ export class NewRootCommand extends CommandRunner {
   doNoLog() {
     globalThis.no_log = true
   }
-
 }

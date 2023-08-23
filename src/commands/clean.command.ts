@@ -8,7 +8,8 @@ import { log, logError } from '../loggers'
 
 @Command({
   name: 'clean',
-  description: 'Shut down Playground docker containers, and clean up the working directory',
+  description:
+    'Shut down Playground docker containers, and clean up the working directory',
 })
 export class CleanCommand extends CommandRunner {
   constructor(private _spawn: ReactiveSpawn) {
@@ -39,9 +40,9 @@ export class CleanCommand extends CommandRunner {
           this._shutdownRedis(),
           this._removeWorkingDirectory()
         ).subscribe({
-          next: () => {  },
-          complete: () => {  },
-          error: () => {  }
+          next: () => {},
+          complete: () => {},
+          error: () => {},
         })
       })
     })
@@ -49,7 +50,7 @@ export class CleanCommand extends CommandRunner {
 
   private _verifyWorkingDirectoryExistence() {
     return new Observable((subscriber) => {
-      stat(globalThis.workingDir, (error, stats) => {        
+      stat(globalThis.workingDir, (error, stats) => {
         if (error) {
           logError(
             `The working directory (${globalThis.workingDir}) can not been found; nothing to clean!`
@@ -61,14 +62,14 @@ export class CleanCommand extends CommandRunner {
             `The working directory (${globalThis.workingDir}) is not a directory; this is an error!`
           )
           globalThis.workingDirExists = false
-          subscriber.error();
+          subscriber.error()
         } else {
           readdir(globalThis.workingDir, (err, files) => {
             if (err) {
               globalThis.workingDirExists = false
-              subscriber.error();
+              subscriber.error()
             }
-    
+
             if (files.length === 0) {
               globalThis.workingDirExists = false
               subscriber.next(false)
@@ -76,8 +77,7 @@ export class CleanCommand extends CommandRunner {
               globalThis.workingDirExists = true
               subscriber.next(true)
             }
-          });
-
+          })
         }
       })
     })
@@ -101,16 +101,23 @@ export class CleanCommand extends CommandRunner {
     return new Observable((subscriber) => {
       if (globalThis.executionPathExists) {
         log(`\nShutting down the ERC20 messaging infra...`)
-        this._spawn.reactify(`cd ${globalThis.executionPath} && docker compose down -v`).subscribe({
-          next: (data: Next) => { subscriber.next(data) },
-          error: (data) => { subscriber.error(data) },
-          complete: () => { subscriber.complete() }
-        })
+        this._spawn
+          .reactify(`cd ${globalThis.executionPath} && docker compose down -v`)
+          .subscribe({
+            next: (data: Next) => {
+              subscriber.next(data)
+            },
+            error: (data) => {
+              subscriber.error(data)
+            },
+            complete: () => {
+              subscriber.complete()
+            },
+          })
         log(`✅ subnets & TCE are down`)
       } else {
         log(`\n✅ ERC20 messaging infra is not running; subnets & TCE are down`)
       }
-
     })
   }
 
@@ -121,23 +128,38 @@ export class CleanCommand extends CommandRunner {
     return new Observable((subscriber) => {
       concat(
         new Observable((inner_subscriber) => {
-          this._spawn.reactify(`docker ps --format '{{.Names}}' | grep ${containerName}`).subscribe({
-            next: (data: Next) => {
-              if (data && data.output && `${data.output}`.indexOf(containerName) !== -1) {
-                container_running = true
-              }
-            },
-            error: () => { container_running = false; inner_subscriber.complete() /* grep returns an error code 1 if a pattern is missing */ },
-            complete: () => { inner_subscriber.complete() }
-          })
+          this._spawn
+            .reactify(`docker ps --format '{{.Names}}' | grep ${containerName}`)
+            .subscribe({
+              next: (data: Next) => {
+                if (
+                  data &&
+                  data.output &&
+                  `${data.output}`.indexOf(containerName) !== -1
+                ) {
+                  container_running = true
+                }
+              },
+              error: () => {
+                container_running = false
+                inner_subscriber.complete() /* grep returns an error code 1 if a pattern is missing */
+              },
+              complete: () => {
+                inner_subscriber.complete()
+              },
+            })
         }),
         new Observable((inner_subscriber) => {
           if (container_running) {
             log(`\nShutting down the redis server...`)
 
             this._spawn.reactify(`docker rm -f ${containerName}`).subscribe({
-              next: (data: Next) => { inner_subscriber.next(data) },
-              complete: () => { inner_subscriber.complete() }
+              next: (data: Next) => {
+                inner_subscriber.next(data)
+              },
+              complete: () => {
+                inner_subscriber.complete()
+              },
             })
             log(`✅ redis is down`)
           } else {
@@ -148,9 +170,15 @@ export class CleanCommand extends CommandRunner {
           inner_subscriber.complete()
         })
       ).subscribe({
-        next: (data: Next) => { subscriber.next(data) },
-        error: () => { subscriber.error() },
-        complete: () => { subscriber.complete() }
+        next: (data: Next) => {
+          subscriber.next(data)
+        },
+        error: () => {
+          subscriber.error()
+        },
+        complete: () => {
+          subscriber.complete()
+        },
       })
     })
   }
@@ -158,11 +186,19 @@ export class CleanCommand extends CommandRunner {
   private _removeWorkingDirectory() {
     const homeDir = homedir()
     return new Observable((subscriber) => {
-      if (globalThis.workingDirExists && globalThis.workingDir.indexOf(homeDir) !== -1 && globalThis.workingDir !== homeDir) {
+      if (
+        globalThis.workingDirExists &&
+        globalThis.workingDir.indexOf(homeDir) !== -1 &&
+        globalThis.workingDir !== homeDir
+      ) {
         log(`\nCleaning up the working directory (${globalThis.workingDir})`)
         this._spawn.reactify(`rm -rf ${globalThis.workingDir}`).subscribe({
-          next: (data: Next) => { subscriber.next(data) },
-          complete: () => { subscriber.complete() }
+          next: (data: Next) => {
+            subscriber.next(data)
+          },
+          complete: () => {
+            subscriber.complete()
+          },
         })
         log('✅ Working directory has been removed')
       }

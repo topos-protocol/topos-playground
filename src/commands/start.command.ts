@@ -10,9 +10,12 @@ const INFRA_REF = 'v0.1.5'
 const FRONTEND_REF = 'v0.1.0-alpha3'
 const EXECUTOR_SERVICE_REF = 'v0.1.1'
 
-@Command({ name: 'start', description: 'Verify that all dependencies are installed, clone any needed repositories, setup the environment, and start all of the docker containers for the Playground' })
+@Command({
+  name: 'start',
+  description:
+    'Verify that all dependencies are installed, clone any needed repositories, setup the environment, and start all of the docker containers for the Playground',
+})
 export class StartCommand extends CommandRunner {
-
   constructor(
     private _spawn: ReactiveSpawn,
     private readonly inquirer: InquirerService
@@ -72,7 +75,7 @@ export class StartCommand extends CommandRunner {
 
   private _verifyDockerInstallation() {
     let output = null
-  
+
     return of(
       new Observable((subscriber) => {
         this._spawn.reactify('docker --version').subscribe({
@@ -80,14 +83,22 @@ export class StartCommand extends CommandRunner {
             output = data
             subscriber.next('')
           },
-          error: () => { subscriber.error() },
-          complete: () => { subscriber.complete() },
+          error: () => {
+            subscriber.error()
+          },
+          complete: () => {
+            subscriber.complete()
+          },
         })
       }),
-      defer(() => of(
-        output.orign === 'stderr' ?
-          log(`❌ Docker is not installed!`) :
-          log(`✅ Docker`), log(`   ${output.output}`))),
+      defer(() =>
+        of(
+          output.orign === 'stderr'
+            ? log(`❌ Docker is not installed!`)
+            : log(`✅ Docker`),
+          log(`   ${output.output}`)
+        )
+      )
     ).pipe(concatAll())
   }
 
@@ -212,7 +223,11 @@ export class StartCommand extends CommandRunner {
         '.env.executor-service',
         `${globalThis.workingDir}/executor-service`
       ),
-      this._copyEnvFile('.env.secrets', `${globalThis.workingDir}`, `.env.secrets`),
+      this._copyEnvFile(
+        '.env.secrets',
+        `${globalThis.workingDir}`,
+        `.env.secrets`
+      ),
       defer(() => of(log('')))
     ).pipe(concatAll())
   }
@@ -284,9 +299,7 @@ export class StartCommand extends CommandRunner {
       ),
       defer(() =>
         of(
-          log(
-            `✅ Contract addresses were retrieved and written to env files`
-          ),
+          log(`✅ Contract addresses were retrieved and written to env files`),
           log(``)
         )
       )
@@ -386,5 +399,4 @@ export class StartCommand extends CommandRunner {
         })
       )
   }
-
 }
