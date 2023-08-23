@@ -53,7 +53,7 @@ export class CleanCommand extends CommandRunner {
       stat(globalThis.workingDir, (error, stats) => {
         if (error) {
           logError(
-            `The working directory (${globalThis.workingDir}) can not been found; nothing to clean!`
+            `The working directory (${globalThis.workingDir}) cannot be found; nothing to clean!`
           )
           globalThis.workingDirExists = false
           subscriber.next(false)
