@@ -1,2 +1,0 @@
-error: docker: Error response from daemon: driver failed programming external connectivity on endpoint redis-stack-server (662867da5745dd786f75213af8f91365caab5c5ecd38370fcd4c1a8542c5432c): Error starting userland proxy: listen tcp4 0.0.0.0:6379: bind: address already in use.
-
