@@ -4,7 +4,7 @@ import { concatAll, tap } from 'rxjs/operators'
 import { defer, Observable, of } from 'rxjs'
 
 import { Next, ReactiveSpawn } from '../ReactiveSpawn'
-import { log, logError } from 'src/loggers'
+import { log, logError } from '../loggers'
 
 const INFRA_REF = 'v0.1.5'
 const FRONTEND_REF = 'v0.1.0-alpha3'

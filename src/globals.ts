@@ -1,8 +1,10 @@
 import { mkdir } from 'fs'
 import { join } from 'path'
 import { randomUUID } from 'crypto'
-import { loggerConsole, logError } from 'src/loggers'
 import { config } from 'dotenv'
+
+import { loggerConsole, logError } from './loggers'
+
 config()
 
 declare global {

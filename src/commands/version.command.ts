@@ -1,10 +1,8 @@
-const { version } = require('../../package.json');
-
 import { Command, CommandRunner } from 'nest-commander'
 
 import { ReactiveSpawn } from '../ReactiveSpawn'
-import { log } from 'src/loggers'
-
+import { log } from '../loggers'
+const { version } = require('../../package.json');
   
 @Command({
   name: 'version',

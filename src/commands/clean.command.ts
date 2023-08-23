@@ -1,11 +1,10 @@
 import { stat, readdir } from 'fs'
-
 import { Command, CommandRunner } from 'nest-commander'
 import { Observable, concat } from 'rxjs'
 import { homedir } from 'os'
 
 import { Next, ReactiveSpawn } from '../ReactiveSpawn'
-import { log, logError } from 'src/loggers'
+import { log, logError } from '../loggers'
 
 @Command({
   name: 'clean',

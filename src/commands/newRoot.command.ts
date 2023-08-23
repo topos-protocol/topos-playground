@@ -1,10 +1,9 @@
-const { version, description } = require('../../package.json');
-
 import { breakText } from 'src/utility'
 import { RootCommand, Option, CommandRunner } from 'nest-commander'
 
 import { ReactiveSpawn } from '../ReactiveSpawn'
-import { log } from 'src/loggers'
+import { log } from '../loggers'
+const { version, description } = require('../../package.json');
 
 const helptext = `
 
