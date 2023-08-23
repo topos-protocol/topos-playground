@@ -36,8 +36,8 @@ export function breakText(str: string, n: number = 60): string {
         word = ""
       } else {
         if ((((line.length + word.length) > n) && ((n - line.length) > maxWordLength)) || i === str.length - 1) {
-          let first_character = word[0]
-          if (first_character.toLowerCase() != first_character.toUpperCase() && word.length > maxWordLength) {
+          let firstCharacter = word[0]
+          if (firstCharacter.toLowerCase() != firstCharacter.toUpperCase() && word.length > maxWordLength) {
             let part = word.substring(0, maxWordLength - 1)
             let remaining = word.substring(maxWordLength - 1)
             lines.push(line + part + (remaining.length > 0 ? "-" : ""))

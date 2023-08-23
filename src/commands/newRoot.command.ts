@@ -65,6 +65,6 @@ export class NewRootCommand extends CommandRunner {
     description: `Do not write a log file`,
   })
   doNoLog() {
-    globalThis.no_log = true
+    globalThis.noLog = true
   }
 }

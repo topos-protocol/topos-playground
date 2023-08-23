@@ -20,15 +20,15 @@ export class CleanCommand extends CommandRunner {
     log(`Cleaning up Topos-Playground...`)
     log(``)
 
-    this._verifyWorkingDirectoryExistence().subscribe((working_dir_flag) => {
-      if (working_dir_flag) {
+    this._verifyWorkingDirectoryExistence().subscribe((workingDirFlag) => {
+      if (workingDirFlag) {
         log(`Found working directory (${globalThis.workingDir})`)
       } else {
         log(`Working directory (${globalThis.workingDir}) empty or not found`)
       }
 
-      this._verifyExecutionPathExistence().subscribe((execution_path_flag) => {
-        if (execution_path_flag) {
+      this._verifyExecutionPathExistence().subscribe((executionPathFlag) => {
+        if (executionPathFlag) {
           log(`Found execution path (${globalThis.executionPath})`)
         } else {
           log(`Execution path (${globalThis.executionPath}) not found`)
@@ -123,11 +123,11 @@ export class CleanCommand extends CommandRunner {
 
   private _shutdownRedis() {
     const containerName = 'redis-stack-server'
-    let container_running = false
+    let containerRunning = false
 
     return new Observable((subscriber) => {
       concat(
-        new Observable((inner_subscriber) => {
+        new Observable((innerSubscriber) => {
           this._spawn
             .reactify(`docker ps --format '{{.Names}}' | grep ${containerName}`)
             .subscribe({
@@ -137,28 +137,28 @@ export class CleanCommand extends CommandRunner {
                   data.output &&
                   `${data.output}`.indexOf(containerName) !== -1
                 ) {
-                  container_running = true
+                  containerRunning = true
                 }
               },
               error: () => {
-                container_running = false
-                inner_subscriber.complete() /* grep returns an error code 1 if a pattern is missing */
+                containerRunning = false
+                innerSubscriber.complete() /* grep returns an error code 1 if a pattern is missing */
               },
               complete: () => {
-                inner_subscriber.complete()
+                innerSubscriber.complete()
               },
             })
         }),
-        new Observable((inner_subscriber) => {
-          if (container_running) {
+        new Observable((innerSubscriber) => {
+          if (containerRunning) {
             log(`\nShutting down the redis server...`)
 
             this._spawn.reactify(`docker rm -f ${containerName}`).subscribe({
               next: (data: Next) => {
-                inner_subscriber.next(data)
+                innerSubscriber.next(data)
               },
               complete: () => {
-                inner_subscriber.complete()
+                innerSubscriber.complete()
               },
             })
             log(`✅ redis is down`)
@@ -166,8 +166,8 @@ export class CleanCommand extends CommandRunner {
             log(`\n ✅ redis is not running; nothing to shut down`)
           }
         }),
-        new Observable((inner_subscriber) => {
-          inner_subscriber.complete()
+        new Observable((innerSubscriber) => {
+          innerSubscriber.complete()
         })
       ).subscribe({
         next: (data: Next) => {

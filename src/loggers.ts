@@ -36,7 +36,7 @@ function logConsole() {
 function logFile() {
   if (!globalThis.loggerFile)
     globalThis.loggerFile = createLoggerFile(
-      globalThis.no_log ? '/dev/null' : globalThis.logFilePath
+      globalThis.noLog ? '/dev/null' : globalThis.logFilePath
     )
 
   return globalThis.loggerFile

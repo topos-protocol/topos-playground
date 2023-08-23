@@ -10,7 +10,7 @@ config()
 declare global {
   var verbose: boolean
   var quiet: boolean
-  var no_log: boolean
+  var noLog: boolean
   var workingDir: string
   var workingDirExists: boolean
   var logDir: string
@@ -25,11 +25,11 @@ export function setupGlobals() {
   // Setup global configuration
 
   let home = process.env.HOME || '.'
-  let data_home = process.env.XDG_DATA_HOME || join(home, '.local', 'share')
-  let state_home = process.env.XDG_STATE_HOME || join(home, '.local', 'state')
+  let dataHome = process.env.XDG_DATA_HOME || join(home, '.local', 'share')
+  let stateHome = process.env.XDG_STATE_HOME || join(home, '.local', 'state')
 
-  globalThis.workingDir = join(data_home, 'topos-playground')
-  globalThis.logDir = join(state_home, 'topos-playground/logs')
+  globalThis.workingDir = join(dataHome, 'topos-playground')
+  globalThis.logDir = join(stateHome, 'topos-playground/logs')
   globalThis.lconsole = loggerConsole
   globalThis.logFilePath = join(logDir, `log-${randomUUID()}.log`)
   globalThis.executionPath = join(
