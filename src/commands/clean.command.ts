@@ -20,19 +20,8 @@ export class CleanCommand extends CommandRunner {
     log(`Cleaning up Topos-Playground...`)
     log(``)
 
-    this._verifyWorkingDirectoryExistence().subscribe((workingDirFlag) => {
-      if (workingDirFlag) {
-        log(`Found working directory (${globalThis.workingDir})`)
-      } else {
-        log(`Working directory (${globalThis.workingDir}) empty or not found`)
-      }
-
-      this._verifyExecutionPathExistence().subscribe((executionPathFlag) => {
-        if (executionPathFlag) {
-          log(`Found execution path (${globalThis.executionPath})`)
-        } else {
-          log(`Execution path (${globalThis.executionPath}) not found`)
-        }
+    this._verifyWorkingDirectoryExistence().subscribe(() => {
+      this._verifyExecutionPathExistence().subscribe(() => {
 
         // Coordinate the steps to clean up the environment
         concat(
@@ -48,11 +37,10 @@ export class CleanCommand extends CommandRunner {
     return new Observable((subscriber) => {
       stat(globalThis.workingDir, (error, stats) => {
         if (error) {
-          logError(
-            `The working directory (${globalThis.workingDir}) cannot be found; nothing to clean!`
-          )
           globalThis.workingDirExists = false
-          subscriber.next(false)
+          log(`Working directory (${globalThis.workingDir}) is not found; nothing to clean.`)
+          subscriber.next()
+          subscriber.complete()
         } else if (!stats.isDirectory()) {
           logError(
             `The working directory (${globalThis.workingDir}) is not a directory; this is an error!`
@@ -63,15 +51,22 @@ export class CleanCommand extends CommandRunner {
           readdir(globalThis.workingDir, (err, files) => {
             if (err) {
               globalThis.workingDirExists = false
+              logError(
+                `Error while trying to read the working directory (${globalThis.workingDir})`
+              )
               subscriber.error()
             }
 
             if (files.length === 0) {
               globalThis.workingDirExists = false
-              subscriber.next(false)
+              log(`Working directory (${globalThis.workingDir}) is empty; nothing to clean.`)
+              subscriber.next()
+              subscriber.complete()
             } else {
               globalThis.workingDirExists = true
-              subscriber.next(true)
+              log(`Found working directory (${globalThis.workingDir})`)
+              subscriber.next()
+              subscriber.complete()
             }
           })
         }
@@ -84,10 +79,14 @@ export class CleanCommand extends CommandRunner {
       stat(globalThis.executionPath, (error) => {
         if (error) {
           globalThis.executionPathExists = false
-          subscriber.next(false)
+          log(`Execution path (${globalThis.executionPath}) not found`)
+          subscriber.next()
+          subscriber.complete()
         } else {
           globalThis.executionPathExists = true
-          subscriber.next(true)
+          log(`Found execution path (${globalThis.executionPath})`)
+          subscriber.next()
+          subscriber.complete()
         }
       })
     })
@@ -159,7 +158,7 @@ export class CleanCommand extends CommandRunner {
             })
             log(`✅ redis is down`)
           } else {
-            log(`\n ✅ redis is not running; nothing to shut down`)
+            log(`\n✅ redis is not running; nothing to shut down`)
           }
         }),
         new Observable((innerSubscriber) => {
