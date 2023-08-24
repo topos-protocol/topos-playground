@@ -29,11 +29,11 @@ export function createLoggerFile(logFilePath: string) {
   })
 }
 
-function logConsole() {
+function getLogConsole() {
   return globalThis.loggerConsoleVar
 }
 
-function logFile() {
+function getLogFile() {
   if (!globalThis.loggerFile)
     globalThis.loggerFile = createLoggerFile(
       globalThis.noLog ? '/dev/null' : globalThis.logFilePath
@@ -46,8 +46,8 @@ export function log(logMessage: string, overrideQuiet: boolean = false) {
   let lines = logMessage.split('\n')
 
   for (let line of lines) {
-    if (overrideQuiet || !globalThis.quiet) logConsole().info(line)
-    logFile().info(line)
+    if (overrideQuiet || !globalThis.quiet) getLogConsole().info(line)
+    getLogFile().info(line)
   }
 }
 
@@ -55,10 +55,10 @@ export function logError(errorMessage: string) {
   let lines = errorMessage.split('\n')
 
   for (let line of lines) {
-    logConsole().error(line)
-    logFile().error(line)
+    getLogConsole().error(line)
+    getLogFile().error(line)
   }
 
-  logConsole().error(`Find more details in ${globalThis.logFilePath}`)
-  logFile().error(`Find more details in ${globalThis.logFilePath}`)
+  getLogConsole().error(`Find more details in ${globalThis.logFilePath}`)
+  getLogFile().error(`Find more details in ${globalThis.logFilePath}`)
 }
