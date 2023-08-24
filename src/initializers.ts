@@ -21,7 +21,7 @@ declare global {
   var loggerFile
 }
 
-export function setupGlobals() {
+export function initializeGlobals() {
   // Setup global configuration
 
   let home = process.env.HOME || '.'
@@ -38,7 +38,9 @@ export function setupGlobals() {
   )
 
   globalThis.loggerFile = false
+}
 
+export function initializeDirectories() {
   // Create the working directory if it does not exist
   mkdir(globalThis.workingDir, { recursive: true }, (error) => {
     if (error) {

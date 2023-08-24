@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 import { CommandFactory } from 'nest-commander'
-import { setupGlobals } from 'src/globals'
+
+import { initializeGlobals, initializeDirectories } from './initializers'
 import { AppModule } from './app.module'
 
 async function bootstrap() {
   await CommandFactory.run(AppModule)
 }
 
-setupGlobals()
+initializeGlobals()
+initializeDirectories()
 bootstrap()
