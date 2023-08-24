@@ -23,7 +23,7 @@ const overrideQuiet = true
     columns
   )}`,
 })
-export class NewRootCommand extends CommandRunner {
+export class Root extends CommandRunner {
   constructor(private _spawn: ReactiveSpawn) {
     super()
   }
