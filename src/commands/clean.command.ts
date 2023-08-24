@@ -182,14 +182,7 @@ export class CleanCommand extends CommandRunner {
       ) {
         log('')
         log(`Cleaning up the working directory (${globalThis.workingDir})`)
-        this._spawn.reactify(`rm -rf ${globalThis.workingDir}`).subscribe({
-          next: (data: Next) => {
-            subscriber.next(data)
-          },
-          complete: () => {
-            subscriber.complete()
-          },
-        })
+        this._spawn.reactify(`rm -rf ${globalThis.workingDir}`).subscribe()
         log('✅ Working directory has been removed')
       }
     })
