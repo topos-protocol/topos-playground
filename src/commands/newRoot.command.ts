@@ -15,6 +15,7 @@ These locations can be overridden by setting the environment variables HOME, XDG
 `.trim()
 
 const columns = process.stdout.columns || 80
+const overrideQuiet = true
 
 @RootCommand({
   description: `${breakText(description, columns)}\n\n${breakText(
@@ -34,7 +35,7 @@ export class NewRootCommand extends CommandRunner {
     description: `Show topos-playground version (v${version})`,
   })
   doVersion() {
-    log((globalThis.quiet ? '' : 'topos-playground version ') + version, true)
+    log((globalThis.quiet ? '' : 'topos-playground version ') + version, overrideQuiet)
     log(``)
   }
 
