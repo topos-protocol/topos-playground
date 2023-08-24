@@ -16,7 +16,7 @@ declare global {
   var logDir: string
   var executionPath: string
   var executionPathExists: boolean
-  var lconsole: typeof loggerConsole
+  var loggerConsoleVar: typeof loggerConsole
   var logFilePath: string
   var loggerFile
 }
@@ -30,7 +30,7 @@ export function setupGlobals() {
 
   globalThis.workingDir = join(dataHome, 'topos-playground')
   globalThis.logDir = join(stateHome, 'topos-playground/logs')
-  globalThis.lconsole = loggerConsole
+  globalThis.loggerConsoleVar = loggerConsole
   globalThis.logFilePath = join(logDir, `log-${randomUUID()}.log`)
   globalThis.executionPath = join(
     globalThis.workingDir,

@@ -30,7 +30,7 @@ export function createLoggerFile(logFilePath: string) {
 }
 
 function logConsole() {
-  return globalThis.lconsole
+  return globalThis.loggerConsoleVar
 }
 
 function logFile() {
