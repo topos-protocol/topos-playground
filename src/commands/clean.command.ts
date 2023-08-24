@@ -154,14 +154,7 @@ export class CleanCommand extends CommandRunner {
           if (containerRunning) {
             log(`Shutting down the redis server...`)
 
-            this._spawn.reactify(`docker rm -f ${containerName}`).subscribe({
-              next: (data: Next) => {
-                innerSubscriber.next(data)
-              },
-              complete: () => {
-                innerSubscriber.complete()
-              },
-            })
+            this._spawn.reactify(`docker rm -f ${containerName}`).subscribe()
             log(`✅ redis is down`)
           } else {
             log(`✅ redis is not running; nothing to shut down`)
