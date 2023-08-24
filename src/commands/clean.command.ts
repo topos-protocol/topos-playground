@@ -123,45 +123,34 @@ export class CleanCommand extends CommandRunner {
 
   private _shutdownRedis() {
     const containerName = 'redis-stack-server'
-    let containerRunning = false
 
     return new Observable((subscriber) => {
-      concat(
-        new Observable((innerSubscriber) => {
-          this._spawn
-            .reactify(`docker ps --format '{{.Names}}' | grep ${containerName}`)
-            .subscribe({
-              next: (data: Next) => {
-                if (
-                  data &&
-                  data.output &&
-                  `${data.output}`.indexOf(containerName) !== -1
-                ) {
-                  containerRunning = true
-                }
-              },
-              error: () => {
-                containerRunning = false
-                innerSubscriber.complete() /* grep returns an error code 1 if a pattern is missing */
-              },
-              complete: () => {
-                innerSubscriber.complete()
-              },
-            })
-        }),
-        new Observable((innerSubscriber) => {
-          log('')
-          if (containerRunning) {
-            log(`Shutting down the redis server...`)
+      this._spawn
+        .reactify(`docker ps --format '{{.Names}}' | grep ${containerName}`)
+        .subscribe({
+          next: (data: Next) => {
+            if (
+              data &&
+              data.output &&
+              `${data.output}`.indexOf(containerName) !== -1
+            ) {
+              log('')
+              log(`Shutting down the redis server...`)
 
-            this._spawn.reactify(`docker rm -f ${containerName}`).subscribe()
-            log(`✅ redis is down`)
-          } else {
-            log(`✅ redis is not running; nothing to shut down`)
-          }
-          innerSubscriber.complete()
+              this._spawn.reactify(`docker rm -f ${containerName}`).subscribe()
+              log(`✅ redis is down`)
+            } else {
+              log(`✅ redis is not running; nothing to shut down`)
+            }
+            subscriber.complete()
+          },
+          error: () => {
+            subscriber.complete() /* grep returns an error code 1 if a pattern is missing */
+          },
+          complete: () => {
+            subscriber.complete()
+          },
         })
-      ).subscribe(subscriber)
     })
   }
 
