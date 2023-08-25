@@ -1,9 +1,8 @@
-import { breakText } from 'src/utility'
 import { RootCommand, Option, CommandRunner } from 'nest-commander'
 
-import { ReactiveSpawn } from '../ReactiveSpawn'
+const { description, version } = require('../../package.json')
 import { log } from '../loggers'
-const { version, description } = require('../../package.json')
+import { breakText } from '../utility'
 
 const helptext = `
 
@@ -13,7 +12,6 @@ topos-playground follows the XDG Base Directory Specification, which means that 
 
 These locations can be overridden by setting the environment variables HOME, XDG_DATA_HOME, and XDG_STATE_HOME.
 `.trim()
-
 const columns = process.stdout.columns || 80
 const overrideQuiet = true
 
@@ -24,7 +22,7 @@ const overrideQuiet = true
   )}`,
 })
 export class Root extends CommandRunner {
-  constructor(private _spawn: ReactiveSpawn) {
+  constructor() {
     super()
   }
 
@@ -35,7 +33,10 @@ export class Root extends CommandRunner {
     description: `Show topos-playground version (v${version})`,
   })
   doVersion() {
-    log((globalThis.quiet ? '' : 'topos-playground version ') + version, overrideQuiet)
+    log(
+      (globalThis.quiet ? '' : 'topos-playground version ') + version,
+      overrideQuiet
+    )
     log(``)
   }
 

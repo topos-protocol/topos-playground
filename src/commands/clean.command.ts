@@ -16,7 +16,7 @@ export class CleanCommand extends CommandRunner {
     super()
   }
 
-  async run(): Promise<void> {
+  async run() {
     log(`Cleaning up Topos-Playground...`)
     log(``)
 
@@ -24,7 +24,7 @@ export class CleanCommand extends CommandRunner {
       this._verifyExecutionPathExistence().subscribe(() => {
         // Coordinate the steps to clean up the environment
         concat(
-          this._shutdownFullMsgProtocolInfra(),
+          this._shutdownERC20MessagingProtocolInfra(),
           this._shutdownRedis(),
           this._removeWorkingDirectory()
         ).subscribe()
@@ -95,24 +95,14 @@ export class CleanCommand extends CommandRunner {
     })
   }
 
-  private _shutdownFullMsgProtocolInfra() {
+  private _shutdownERC20MessagingProtocolInfra() {
     return new Observable((subscriber) => {
       log('')
       if (globalThis.executionPathExists) {
         log(`Shutting down the ERC20 messaging infra...`)
         this._spawn
           .reactify(`cd ${globalThis.executionPath} && docker compose down -v`)
-          .subscribe({
-            next: (data: Next) => {
-              subscriber.next(data)
-            },
-            error: (data) => {
-              subscriber.error(data)
-            },
-            complete: () => {
-              subscriber.complete()
-            },
-          })
+          .subscribe(subscriber)
         log(`✅ subnets & TCE are down`)
       } else {
         log(`✅ ERC20 messaging infra is not running; subnets & TCE are down`)
@@ -137,15 +127,18 @@ export class CleanCommand extends CommandRunner {
               log('')
               log(`Shutting down the redis server...`)
 
-              this._spawn.reactify(`docker rm -f ${containerName}`).subscribe()
-              log(`✅ redis is down`)
+              this._spawn.reactify(`docker rm -f ${containerName}`).subscribe({
+                complete: () => {
+                  log(`✅ redis is down`)
+                },
+              })
             } else {
               log(`✅ redis is not running; nothing to shut down`)
             }
             subscriber.complete()
           },
           error: () => {
-            subscriber.complete() /* grep returns an error code 1 if a pattern is missing */
+            subscriber.complete()
           },
           complete: () => {
             subscriber.complete()
@@ -164,8 +157,16 @@ export class CleanCommand extends CommandRunner {
       ) {
         log('')
         log(`Cleaning up the working directory (${globalThis.workingDir})`)
-        this._spawn.reactify(`rm -rf ${globalThis.workingDir}`).subscribe()
-        log('✅ Working directory has been removed')
+        this._spawn.reactify(`rm -rf ${globalThis.workingDir}`).subscribe({
+          complete: () => {
+            log('✅ Working directory has been removed')
+            subscriber.complete()
+          },
+        })
+      } else {
+        log('')
+        log(`✅ Working direction does not exist; nothing to clean`)
+        subscriber.complete()
       }
     })
   }

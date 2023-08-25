@@ -1,4 +1,3 @@
-import { randomUUID } from 'crypto'
 import * as winston from 'winston'
 
 export const loggerConsole = winston.createLogger({
@@ -46,7 +45,9 @@ export function log(logMessage: string, overrideQuiet: boolean = false) {
   let lines = logMessage.split('\n')
 
   for (let line of lines) {
-    if (overrideQuiet || !globalThis.quiet) getLogConsole().info(line)
+    if (overrideQuiet || !globalThis.quiet) {
+      getLogConsole().info(line)
+    }
     getLogFile().info(line)
   }
 }

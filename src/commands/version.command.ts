@@ -1,8 +1,7 @@
 import { Command, CommandRunner } from 'nest-commander'
 
-import { ReactiveSpawn } from '../ReactiveSpawn'
-import { log } from '../loggers'
 const { version } = require('../../package.json')
+import { log } from '../loggers'
 
 const overrideQuiet = true
 
@@ -11,12 +10,15 @@ const overrideQuiet = true
   description: `Show topos-playground version (v${version})`,
 })
 export class VersionCommand extends CommandRunner {
-  constructor(private _spawn: ReactiveSpawn) {
+  constructor() {
     super()
   }
 
   async run(): Promise<void> {
-    log((globalThis.quiet ? '' : 'topos-playground version ') + version, overrideQuiet)
+    log(
+      (globalThis.quiet ? '' : 'topos-playground version ') + version,
+      overrideQuiet
+    )
     log(``)
   }
 }

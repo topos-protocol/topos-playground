@@ -1,7 +1,8 @@
 import { ChildProcess, spawn } from 'child_process'
 import { userInfo } from 'os'
 import { Observable } from 'rxjs'
-import { log, logError } from 'src/loggers'
+
+import { log } from './loggers'
 
 export interface Next {
   origin: 'stdout' | 'stderr'
@@ -26,7 +27,7 @@ export class ReactiveSpawn {
         const output = data.toString()
         subscriber.next({ origin: 'stdout', output })
       })
-      
+
       childProcess.stderr.on('data', (data: Buffer) => {
         const output = data.toString()
         subscriber.next({ origin: 'stderr', output })

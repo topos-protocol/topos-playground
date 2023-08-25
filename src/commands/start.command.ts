@@ -1,10 +1,10 @@
 import { readFile, stat } from 'fs'
 import { Command, CommandRunner, InquirerService } from 'nest-commander'
+import { concat, defer, Observable, of } from 'rxjs'
 import { concatAll, tap } from 'rxjs/operators'
-import { defer, Observable, of } from 'rxjs'
 
-import { Next, ReactiveSpawn } from '../ReactiveSpawn'
 import { log, logError } from '../loggers'
+import { Next, ReactiveSpawn } from '../ReactiveSpawn'
 
 const INFRA_REF = 'v0.1.5'
 const FRONTEND_REF = 'v0.1.0-alpha3'
@@ -27,7 +27,7 @@ export class StartCommand extends CommandRunner {
     log(`Starting Topos-Playground...`)
     log(``)
 
-    of(
+    concat(
       this._verifyDependencyInstallation(),
       this._createWorkingDirectoryIfInexistant(),
       this._cloneGitRepositories(),
@@ -37,76 +37,52 @@ export class StartCommand extends CommandRunner {
       this._runRedis(),
       this._runExecutorService(),
       this._rundDappFrontendService()
-    )
-      .pipe(concatAll())
-      .subscribe({
-        complete: () => {
-          log(`🔥 Everything is done! 🔥`)
-          log(``)
-          log(
-            `🚀 Start sending ERC20 tokens across subnet by accessing the dApp Frontend at http://localhost:3001`
-          )
-          log(``)
-          log(
-            `ℹ️  Ctrl/cmd-c will shut down the dApp Frontend and the Executor Service BUT will keep subnets and the TCE running (use the clean command to shut them down)`
-          )
-          log(`ℹ️  Logs were written to ${logFilePath}`)
-        },
-        error: () => {
-          logError(`❌ Error`)
-        },
-        next: (data: Next) => {
-          if (data && data.hasOwnProperty('output')) {
-            log(`${data.output}`)
-          }
-        },
-      })
+    ).subscribe({
+      complete: () => {
+        log(`🔥 Everything is done! 🔥`)
+        log(``)
+        log(
+          `🚀 Start sending ERC20 tokens across subnet by accessing the dApp Frontend at http://localhost:3001`
+        )
+        log(``)
+        log(
+          `ℹ️  Ctrl/cmd-c will shut down the dApp Frontend and the Executor Service BUT will keep subnets and the TCE running (use the clean command to shut them down)`
+        )
+        log(`ℹ️  Logs were written to ${logFilePath}`)
+      },
+      error: () => {
+        logError(`❌ Error`)
+      },
+      next: (data: Next) => {
+        if (data && data.hasOwnProperty('output')) {
+          log(`${data.output}`)
+        }
+      },
+    })
   }
 
   private _verifyDependencyInstallation() {
-    return of(
+    return concat(
       defer(() => of(log('Verifying dependency installation...'))),
       this._verifyDockerInstallation(),
       this._verifyGitInstallation(),
       this._verifyNodeJSInstallation(),
       defer(() => of(log('')))
-    ).pipe(concatAll())
+    )
   }
 
   private _verifyDockerInstallation() {
-    let output = null
-
-    return of(
-      new Observable((subscriber) => {
-        this._spawn.reactify('docker --version').subscribe({
-          next: (data: Next) => {
-            output = data
-            subscriber.next('')
-          },
-          error: () => {
-            subscriber.error()
-          },
-          complete: () => {
-            subscriber.complete()
-          },
-        })
-      }),
-      defer(() =>
-        of(
-          output.orign === 'stderr'
-            ? log(`❌ Docker is not installed!`)
-            : log(`✅ Docker`),
-          log(`   ${output.output}`)
-        )
-      )
-    ).pipe(concatAll())
+    return concat(
+      this._spawn.reactify('docker --version'),
+      defer(() => of(log('✅ Docker')))
+    )
   }
 
   private _verifyGitInstallation() {
-    return of(
+    return concat(
       this._spawn.reactify('git --version'),
       defer(() => of(log('✅ Git')))
-    ).pipe(concatAll())
+    )
   }
 
   private _verifyNodeJSInstallation() {
@@ -147,7 +123,7 @@ export class StartCommand extends CommandRunner {
   }
 
   private _cloneGitRepositories() {
-    return of(
+    return concat(
       defer(() => of(log('Cloning repositories...'))),
       this._cloneGitRepository(
         'topos-protocol',
@@ -165,7 +141,7 @@ export class StartCommand extends CommandRunner {
         EXECUTOR_SERVICE_REF
       ),
       defer(() => of(log('')))
-    ).pipe(concatAll())
+    )
   }
 
   private _cloneGitRepository(
@@ -209,7 +185,7 @@ export class StartCommand extends CommandRunner {
   }
 
   private _copyEnvFiles() {
-    return of(
+    return concat(
       defer(() => of(log('Copying .env files across repositories...'))),
       this._copyEnvFile(
         '.env.dapp-frontend',
@@ -229,7 +205,7 @@ export class StartCommand extends CommandRunner {
         `.env.secrets`
       ),
       defer(() => of(log('')))
-    ).pipe(concatAll())
+    )
   }
 
   private _copyEnvFile(
@@ -271,20 +247,20 @@ export class StartCommand extends CommandRunner {
     const secretsFilePath = `${globalThis.workingDir}/.env.secrets`
     const executionPath = `${globalThis.workingDir}/local-erc20-messaging-infra`
 
-    return of(
+    return concat(
       defer(() => of(log(`Running the ERC20 messaging infra...`))),
       this._spawn.reactify(
         `source ${secretsFilePath} && cd ${executionPath} && docker compose up -d`
       ),
       defer(() => of(log(`✅ Subnets & TCE are running`), log(``)))
-    ).pipe(concatAll())
+    )
   }
 
   private _retrieveAndWriteContractAddressesToEnv() {
     const frontendEnvFilePath = `${globalThis.workingDir}/dapp-frontend-erc20-messaging/packages/frontend/.env`
     const executorServiceEnvFilePath = `${globalThis.workingDir}/executor-service/.env`
 
-    return of(
+    return concat(
       defer(() => of(log(`Retrieving contract addresses...`))),
       this._spawn.reactify(
         `docker cp contracts-topos:/contracts/.env ${globalThis.workingDir}/.env.addresses`
@@ -303,31 +279,31 @@ export class StartCommand extends CommandRunner {
           log(``)
         )
       )
-    ).pipe(concatAll())
+    )
   }
 
   private _runRedis() {
     const containerName = 'redis-stack-server'
 
-    return of(
+    return concat(
       defer(() => of(log(`Running the redis server...`))),
       this._spawn.reactify(
         `docker start ${containerName} 2>/dev/null || docker run -d --name ${containerName} -p 6379:6379 redis/redis-stack-server:latest`
       ),
       defer(() => of(log(`✅ redis is running`), log(``)))
-    ).pipe(concatAll())
+    )
   }
 
   private _runExecutorService() {
     const secretsFilePath = `${globalThis.workingDir}/.env.secrets`
     const executionPath = `${globalThis.workingDir}/executor-service`
 
-    return of(
+    return concat(
       defer(() => of(log(`Running the Executor Service...`))),
       this._npmInstall(executionPath),
       this._startExecutorService(secretsFilePath, executionPath),
       defer(() => of(log(``)))
-    ).pipe(concatAll())
+    )
   }
 
   private _npmInstall(executionPath: string) {
@@ -362,13 +338,13 @@ export class StartCommand extends CommandRunner {
     const secretsFilePath = `${globalThis.workingDir}/.env.secrets`
     const executionPath = `${globalThis.workingDir}/dapp-frontend-erc20-messaging`
 
-    return of(
+    return concat(
       defer(() => of(log(`Running the dApp Frontend...`))),
       this._npmInstall(executionPath),
       this._buildDappFrontend(secretsFilePath, executionPath),
       this._startDappFrontend(secretsFilePath, executionPath),
       defer(() => of(log(``)))
-    ).pipe(concatAll())
+    )
   }
 
   private _buildDappFrontend(secretsFilePath: string, executionPath: string) {
