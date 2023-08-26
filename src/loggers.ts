@@ -42,12 +42,16 @@ function getLogFile() {
 }
 
 export function log(logMessage: string, overrideQuiet: boolean = false) {
-  let lines = logMessage.split('\n')
-
-  for (let line of lines) {
+  for (let line of logMessage.split('\n')) {
     if (overrideQuiet || !globalThis.quiet) {
       getLogConsole().info(line)
     }
+    getLogFile().info(line)
+  }
+}
+
+export function logToFile(logMessage: string) {
+  for (let line of logMessage.split('\n')) {
     getLogFile().info(line)
   }
 }
@@ -60,6 +64,7 @@ export function logError(errorMessage: string) {
     getLogFile().error(line)
   }
 
-  getLogConsole().error(`Find more details in ${globalThis.logFilePath}`)
-  getLogFile().error(`Find more details in ${globalThis.logFilePath}`)
+  const message = `Find the full log file in ${globalThis.logFilePath}`
+  getLogConsole().error(message)
+  getLogFile().error(message)
 }

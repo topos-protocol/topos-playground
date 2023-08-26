@@ -1,9 +1,9 @@
 import { readFile, stat } from 'fs'
 import { Command, CommandRunner, InquirerService } from 'nest-commander'
-import { concat, defer, Observable, of } from 'rxjs'
-import { concatAll, tap } from 'rxjs/operators'
+import { concat, defer, Observable, of, tap } from 'rxjs'
+import { satisfies } from 'semver'
 
-import { log, logError } from '../loggers'
+import { log, logError, logToFile } from '../loggers'
 import { Next, ReactiveSpawn } from '../ReactiveSpawn'
 
 const INFRA_REF = 'v0.1.5'
@@ -50,12 +50,12 @@ export class StartCommand extends CommandRunner {
         )
         log(`ℹ️  Logs were written to ${logFilePath}`)
       },
-      error: () => {
-        logError(`❌ Error`)
+      error: (error) => {
+        logError(`❗ ${error}`)
       },
       next: (data: Next) => {
-        if (data && data.hasOwnProperty('output')) {
-          log(`${data.output}`)
+        if (globalThis.verbose && data && data.hasOwnProperty('output')) {
+          logToFile(`${data.output}`)
         }
       },
     })
@@ -63,33 +63,109 @@ export class StartCommand extends CommandRunner {
 
   private _verifyDependencyInstallation() {
     return concat(
-      defer(() => of(log('Verifying dependency installation...'))),
+      of(log('Verifying dependency installation...')),
       this._verifyDockerInstallation(),
       this._verifyGitInstallation(),
-      this._verifyNodeJSInstallation(),
-      defer(() => of(log('')))
+      this._verifyNodeJSInstallation()
+    ).pipe(
+      tap({
+        complete: () => {
+          log('✅ Dependency checks completed!')
+          log('')
+        },
+      })
     )
   }
 
   private _verifyDockerInstallation() {
-    return concat(
-      this._spawn.reactify('docker --version'),
-      defer(() => of(log('✅ Docker')))
+    let version = ''
+
+    return this._spawn.reactify('docker --version').pipe(
+      tap({
+        next: (data: Next) => {
+          if (data && data.hasOwnProperty('output')) {
+            let match = RegExp(/Docker version ([0-9]+\.[0-9]+\.[0-9]+)/).exec(
+              `${data.output}`
+            )
+            if (match) {
+              version = match[1]
+            }
+          }
+        },
+        complete: () => {
+          if (satisfies(version, '>=17.6.0')) {
+            log(`✅ Docker -- Version: ${version}`)
+          } else {
+            log(`❌ Docker -- Version: ${version}`)
+            throw new Error(
+              `Docker ${version} is not supported\n` +
+                'Please upgrade Docker to version 17.06.0 or higher.'
+            )
+          }
+        },
+        error: () => {
+          logError(`❌ Docker Not Installed!`)
+        },
+      })
     )
   }
 
   private _verifyGitInstallation() {
-    return concat(
-      this._spawn.reactify('git --version'),
-      defer(() => of(log('✅ Git')))
+    let version = ''
+
+    return this._spawn.reactify('git --version').pipe(
+      tap({
+        next: (data: Next) => {
+          if (data && data.hasOwnProperty('output')) {
+            let match = RegExp(/git version ([0-9]+\.[0-9]+\.[0-9]+)/).exec(
+              `${data.output}`
+            )
+            if (match) {
+              version = match[1]
+            }
+          }
+        },
+        complete: () => {
+          log(`✅ Git -- Version: ${version}`)
+        },
+        error: () => {
+          logError(`❌ Git Not Intalled!`)
+        },
+      })
     )
   }
 
   private _verifyNodeJSInstallation() {
-    return of(
-      this._spawn.reactify('node --version'),
-      defer(() => of(log('✅ NodeJS')))
-    ).pipe(concatAll())
+    let version = ''
+
+    return this._spawn.reactify('node --version').pipe(
+      tap({
+        next: (data: Next) => {
+          if (data && data.hasOwnProperty('output')) {
+            let match = RegExp(/v([0-9]+\.[0-9]+\.[0-9]+)/).exec(
+              `${data.output}`
+            )
+            if (match) {
+              version = match[1]
+            }
+          }
+        },
+        complete: () => {
+          if (satisfies(version, '>=16.0.0')) {
+            log(`✅ Node.js -- Version: ${version}`)
+          } else {
+            log(`❌ Node.js -- Version: ${version}`)
+            throw new Error(
+              `Node.js ${version} is not supported\n` +
+              'Please upgrade Node.js to version 16.0.0 or higher.'
+            )
+          }
+        },
+        error: () => {
+          logError(`❌ Node.js Not Installed!`)
+        },
+      })
+    )
   }
 
   private _createWorkingDirectoryIfInexistant() {
@@ -154,6 +230,10 @@ export class StartCommand extends CommandRunner {
 
       stat(path, (error) => {
         if (error) {
+          if (globalThis.verbose) {
+            log(`Cloning ${organizationName}/${repositoryName}...`)
+          }
+
           this._spawn
             .reactify(
               `git clone --depth 1 ${
@@ -170,6 +250,9 @@ export class StartCommand extends CommandRunner {
                       branch ? ` | ${branch}` : ''
                     } successfully cloned`
                   )
+                  if (globalThis.verbose) {
+                    log('')
+                  }
                 },
               })
             )
@@ -236,7 +319,7 @@ export class StartCommand extends CommandRunner {
             }
           )
         } else {
-          log(`✅ ${localEnvFileName} already existing`)
+          log(`✅ ${localEnvFileName} already exists`)
           subscriber.complete()
         }
       })
