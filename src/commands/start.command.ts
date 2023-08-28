@@ -78,8 +78,6 @@ export class StartCommand extends CommandRunner {
   }
 
   private _verifyDockerInstallation() {
-    let version = ''
-
     return this._spawn.reactify('docker --version').pipe(
       tap({
         next: (data: Next) => {
@@ -87,20 +85,15 @@ export class StartCommand extends CommandRunner {
             let match = RegExp(/Docker version ([0-9]+\.[0-9]+\.[0-9]+)/).exec(
               `${data.output}`
             )
-            if (match) {
-              version = match[1]
+            if (match && satisfies(match[1], '>=17.6.0')) {
+              log(`✅ Docker -- Version: ${match[1]}`)
+            } else {
+              log(`❌ Docker -- Version: ${match[1]}`)
+              throw new Error(
+                `Docker ${match[1]} is not supported\n` +
+                  'Please upgrade Docker to version 17.06.0 or higher.'
+              )
             }
-          }
-        },
-        complete: () => {
-          if (satisfies(version, '>=17.6.0')) {
-            log(`✅ Docker -- Version: ${version}`)
-          } else {
-            log(`❌ Docker -- Version: ${version}`)
-            throw new Error(
-              `Docker ${version} is not supported\n` +
-                'Please upgrade Docker to version 17.06.0 or higher.'
-            )
           }
         },
         error: () => {
@@ -111,8 +104,6 @@ export class StartCommand extends CommandRunner {
   }
 
   private _verifyGitInstallation() {
-    let version = ''
-
     return this._spawn.reactify('git --version').pipe(
       tap({
         next: (data: Next) => {
@@ -120,13 +111,16 @@ export class StartCommand extends CommandRunner {
             let match = RegExp(/git version ([0-9]+\.[0-9]+\.[0-9]+)/).exec(
               `${data.output}`
             )
-            if (match) {
-              version = match[1]
+            if (match && satisfies(match[1], '>=2.0.0')) {
+              log(`✅ Git -- Version: ${match[1]}`)
+            } else {
+              logError(`❌ Git -- Version: ${match[1]}`)
+              throw new Error(
+                `Git ${match[1]} is not supported\n` +
+                  'Please upgrade Git to version 2.0.0 or higher.'
+              )
             }
           }
-        },
-        complete: () => {
-          log(`✅ Git -- Version: ${version}`)
         },
         error: () => {
           logError(`❌ Git Not Intalled!`)
@@ -136,8 +130,6 @@ export class StartCommand extends CommandRunner {
   }
 
   private _verifyNodeJSInstallation() {
-    let version = ''
-
     return this._spawn.reactify('node --version').pipe(
       tap({
         next: (data: Next) => {
@@ -145,20 +137,15 @@ export class StartCommand extends CommandRunner {
             let match = RegExp(/v([0-9]+\.[0-9]+\.[0-9]+)/).exec(
               `${data.output}`
             )
-            if (match) {
-              version = match[1]
+            if (match && satisfies(match[1], '>=16.0.0')) {
+              log(`✅ Node.js -- Version: ${match[1]}`)
+            } else {
+              log(`❌ Node.js -- Version: ${match[1]}`)
+              throw new Error(
+                `Node.js ${match[1]} is not supported\n` +
+                  'Please upgrade Node.js to version 16.0.0 or higher.'
+              )
             }
-          }
-        },
-        complete: () => {
-          if (satisfies(version, '>=16.0.0')) {
-            log(`✅ Node.js -- Version: ${version}`)
-          } else {
-            log(`❌ Node.js -- Version: ${version}`)
-            throw new Error(
-              `Node.js ${version} is not supported\n` +
-              'Please upgrade Node.js to version 16.0.0 or higher.'
-            )
           }
         },
         error: () => {
