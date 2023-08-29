@@ -1,7 +1,9 @@
 name: Publish Package to NPM Registry
+
 on:
   release:
     types: [published]
+
 jobs:
   npm-package:
     runs-on: ubuntu-latest-16-core
@@ -17,3 +19,18 @@ jobs:
       - run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  
+  notification:
+    runs-on: ubuntu-latest-16-core
+    needs: npm-package
+    steps:
+      - name: Send Slack notification
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          payload: |
+            {
+              "repository": "${{ github.repository }}",
+              "version": "${{ github.ref }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ vars.RELEASE_PIPELINE_SLACK_WEBHOOK_URL }}

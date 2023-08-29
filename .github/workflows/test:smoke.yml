@@ -1,0 +1,40 @@
+name: Smoke test
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest-16-core
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up NodeJS
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install deps
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Smoke root command
+        run: node dist/main --help
+
+      - name: Smoke start command
+        run: (node dist/main start -v | tee >(grep -q "🔥 Everything is done! 🔥" && pkill -P $$); [ $? -eq 143 ])
+
+      - name: Smoke clean command
+        run: node dist/main clean -v
+      
+      - name: Upload logs
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: logs
+          path: /home/runner/.local/state/topos-playground/logs

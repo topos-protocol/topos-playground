@@ -1,36 +1,33 @@
-import { randomUUID } from 'crypto'
 import { readFile, stat } from 'fs'
-import { Command, CommandRunner, InquirerService } from 'nest-commander'
-import { concatAll, tap } from 'rxjs/operators'
-import { defer, Observable, of } from 'rxjs'
+import { Command, CommandRunner } from 'nest-commander'
+import { concat, defer, Observable, of, tap } from 'rxjs'
+import { satisfies } from 'semver'
 
+import { log, logError, logToFile } from '../loggers'
 import { Next, ReactiveSpawn } from '../ReactiveSpawn'
-import { workingDir } from 'src/constants'
-import { createLoggerFile, loggerConsole } from 'src/loggers'
 
-const INFRA_REF = 'v0.1.5'
-const FRONTEND_REF = 'v0.1.0-alpha3'
 const EXECUTOR_SERVICE_REF = 'v0.1.1'
+const FRONTEND_REF = 'v0.1.0-alpha3'
+const INFRA_REF = 'v0.1.5'
+const MIN_VERSION_DOCKER = '17.6.0'
+const MIN_VERSION_GIT = '2.0.0'
+const MIN_VERSION_NODE = '16.0.0'
 
-@Command({ name: 'start', description: 'Run everything' })
+@Command({
+  name: 'start',
+  description:
+    'Verify that all dependencies are installed, clone any needed repositories, setup the environment, and start all of the docker containers for the Playground',
+})
 export class StartCommand extends CommandRunner {
-  private _workingDir = workingDir
-  private _loggerConsole = loggerConsole
-  private _logFilePath = `logs/log-${randomUUID()}.log`
-  private _loggerFile = createLoggerFile(this._logFilePath)
-
-  constructor(
-    private _spawn: ReactiveSpawn,
-    private readonly inquirer: InquirerService
-  ) {
+  constructor(private _spawn: ReactiveSpawn) {
     super()
   }
 
-  async run(): Promise<void> {
-    this._log(`Welcome to Topos-Playground!`)
-    this._log(``)
+  async run() {
+    log(`Starting Topos-Playground...`)
+    log(``)
 
-    of(
+    concat(
       this._verifyDependencyInstallation(),
       this._createWorkingDirectoryIfInexistant(),
       this._cloneGitRepositories(),
@@ -40,100 +37,167 @@ export class StartCommand extends CommandRunner {
       this._runRedis(),
       this._runExecutorService(),
       this._rundDappFrontendService()
-    )
-      .pipe(concatAll())
-      .subscribe({
-        complete: () => {
-          this._log(`🔥 Everything is done! 🔥`)
-          this._log(``)
-          this._log(
-            `🚀 Start sending ERC20 tokens across subnet by accessing the dApp Frontend at http://localhost:3001`
-          )
-          this._log(``)
-          this._log(
-            `ℹ️  Ctrl/cmd-c will shut down the dApp Frontend and the Executor Service BUT will keep subnets and the TCE running (use the clean command to shut them down)`
-          )
-          this._log(`ℹ️  Logs were written to ${this._logFilePath}`)
-        },
-        error: () => {
-          this._logError(`❌ Error`)
-        },
-        next: (data: Next) => {
-          if (data && data.hasOwnProperty('origin')) {
-            if (data.origin === 'stderr') {
-              this._loggerFile.error(data.output)
-            } else if (data.origin === 'stdout') {
-              this._loggerFile.info(data.output)
-            }
-          }
-        },
-      })
+    ).subscribe({
+      complete: () => {
+        log(`🔥 Everything is done! 🔥`)
+        log(``)
+        log(
+          `🚀 Start sending ERC20 tokens across subnet by accessing the dApp Frontend at http://localhost:3001`
+        )
+        log(``)
+        log(
+          `ℹ️  Ctrl/cmd-c will shut down the dApp Frontend and the Executor Service BUT will keep subnets and the TCE running (use the clean command to shut them down)`
+        )
+        log(`ℹ️  Logs were written to ${logFilePath}`)
+      },
+      error: () => {
+        logError('❗ Error')
+        process.exit(1)
+      },
+      next: (data: Next) => {
+        if (globalThis.verbose && data && data.hasOwnProperty('output')) {
+          logToFile(`${data.output}`)
+        }
+      },
+    })
   }
 
   private _verifyDependencyInstallation() {
-    return of(
-      defer(() => of(this._log('Verifying dependency installation...'))),
+    return concat(
+      of(log('Verifying dependency installation...')),
       this._verifyDockerInstallation(),
       this._verifyGitInstallation(),
-      this._verifyNodeJSInstallation(),
-      defer(() => of(this._log('')))
-    ).pipe(concatAll())
+      this._verifyNodeJSInstallation()
+    ).pipe(
+      tap({
+        complete: () => {
+          log('✅ Dependency checks completed!')
+          log('')
+        },
+      })
+    )
   }
 
   private _verifyDockerInstallation() {
-    return of(
-      this._spawn.reactify('docker --version'),
-      defer(() => of(this._log('✅ Docker')))
-    ).pipe(concatAll())
+    return this._spawn.reactify('docker --version').pipe(
+      tap({
+        next: (data: Next) => {
+          if (data && data.hasOwnProperty('output')) {
+            let match = RegExp(/Docker version ([0-9]+\.[0-9]+\.[0-9]+)/).exec(
+              `${data.output}`
+            )
+
+            if (match && match.length > 1) {
+              if (satisfies(match[1], `>=${MIN_VERSION_DOCKER}`)) {
+                log(`✅ Docker -- Version: ${match[1]}`)
+              } else {
+                log(`❌ Docker -- Version: ${match[1]}`)
+                throw new Error(
+                  `Docker ${match[1]} is not supported\n` +
+                    'Please upgrade Docker to version 17.06.0 or higher.'
+                )
+              }
+            }
+          }
+        },
+        error: () => {
+          logError(`❌ Docker Not Installed!`)
+        },
+      })
+    )
   }
 
   private _verifyGitInstallation() {
-    return of(
-      this._spawn.reactify('git --version'),
-      defer(() => of(this._log('✅ Git')))
-    ).pipe(concatAll())
+    return this._spawn.reactify('git --version').pipe(
+      tap({
+        next: (data: Next) => {
+          if (data && data.hasOwnProperty('output')) {
+            let match = RegExp(/git version ([0-9]+\.[0-9]+\.[0-9]+)/).exec(
+              `${data.output}`
+            )
+
+            if (match && match.length > 1) {
+              if (satisfies(match[1], `>=${MIN_VERSION_GIT}`)) {
+                log(`✅ Git -- Version: ${match[1]}`)
+              } else {
+                logError(`❌ Git -- Version: ${match[1]}`)
+                throw new Error(
+                  `Git ${match[1]} is not supported\n` +
+                    'Please upgrade Git to version 2.0.0 or higher.'
+                )
+              }
+            }
+          }
+        },
+        error: () => {
+          logError(`❌ Git Not Intalled!`)
+        },
+      })
+    )
   }
 
   private _verifyNodeJSInstallation() {
-    return of(
-      this._spawn.reactify('node --version'),
-      defer(() => of(this._log('✅ NodeJS')))
-    ).pipe(concatAll())
+    return this._spawn.reactify('node --version').pipe(
+      tap({
+        next: (data: Next) => {
+          if (data && data.hasOwnProperty('output')) {
+            let match = RegExp(/v([0-9]+\.[0-9]+\.[0-9]+)/).exec(
+              `${data.output}`
+            )
+
+            if (match && match.length > 1) {
+              if (satisfies(match[1], `>=${MIN_VERSION_NODE}`)) {
+                log(`✅ Node.js -- Version: ${match[1]}`)
+              } else {
+                log(`❌ Node.js -- Version: ${match[1]}`)
+                throw new Error(
+                  `Node.js ${match[1]} is not supported\n` +
+                    'Please upgrade Node.js to version 16.0.0 or higher.'
+                )
+              }
+            }
+          }
+        },
+        error: () => {
+          logError(`❌ Node.js Not Installed!`)
+        },
+      })
+    )
   }
 
   private _createWorkingDirectoryIfInexistant() {
     return new Observable((subscriber) => {
-      this._log(`Verifying working directory: [${this._workingDir}]...`)
+      log(`Verifying working directory: [${globalThis.workingDir}]...`)
 
-      stat(this._workingDir, (error) => {
+      stat(globalThis.workingDir, (error) => {
         if (error) {
           this._spawn
-            .reactify(`mkdir -p ${this._workingDir}`)
+            .reactify(`mkdir -p ${globalThis.workingDir}`)
             .pipe(
               tap({
                 complete: () => {
-                  this._log(`✅ Working directory was successfully created`)
+                  log(`✅ Working directory was successfully created`)
                 },
               })
             )
             .subscribe(subscriber)
         } else {
-          this._log(`✅ Working directory exists`)
+          log(`✅ Working directory exists`)
           subscriber.complete()
         }
       })
     }).pipe(
       tap({
         complete: () => {
-          this._log('')
+          log('')
         },
       })
     )
   }
 
   private _cloneGitRepositories() {
-    return of(
-      defer(() => of(this._log('Cloning repositories...'))),
+    return concat(
+      defer(() => of(log('Cloning repositories...'))),
       this._cloneGitRepository(
         'topos-protocol',
         'local-erc20-messaging-infra',
@@ -149,8 +213,8 @@ export class StartCommand extends CommandRunner {
         'executor-service',
         EXECUTOR_SERVICE_REF
       ),
-      defer(() => of(this._log('')))
-    ).pipe(concatAll())
+      defer(() => of(log('')))
+    )
   }
 
   private _cloneGitRepository(
@@ -159,32 +223,39 @@ export class StartCommand extends CommandRunner {
     branch?: string
   ) {
     return new Observable((subscriber) => {
-      const path = `${this._workingDir}/${repositoryName}`
+      const path = `${globalThis.workingDir}/${repositoryName}`
 
       stat(path, (error) => {
         if (error) {
+          if (globalThis.verbose) {
+            log(`Cloning ${organizationName}/${repositoryName}...`)
+          }
+
           this._spawn
             .reactify(
               `git clone --depth 1 ${
                 branch ? `--branch ${branch}` : ''
-              } git@github.com:${organizationName}/${repositoryName}.git ${
-                this._workingDir
+              } https://github.com/${organizationName}/${repositoryName}.git ${
+                globalThis.workingDir
               }/${repositoryName}`
             )
             .pipe(
               tap({
                 complete: () => {
-                  this._log(
+                  log(
                     `✅ ${repositoryName}${
                       branch ? ` | ${branch}` : ''
                     } successfully cloned`
                   )
+                  if (globalThis.verbose) {
+                    log('')
+                  }
                 },
               })
             )
             .subscribe(subscriber)
         } else {
-          this._log(
+          log(
             `✅ ${repositoryName}${branch ? ` | ${branch}` : ''} already cloned`
           )
           subscriber.complete()
@@ -194,23 +265,27 @@ export class StartCommand extends CommandRunner {
   }
 
   private _copyEnvFiles() {
-    return of(
-      defer(() => of(this._log('Copying .env files across repositories...'))),
+    return concat(
+      defer(() => of(log('Copying .env files across repositories...'))),
       this._copyEnvFile(
         '.env.dapp-frontend',
-        `${this._workingDir}/dapp-frontend-erc20-messaging/packages/frontend`
+        `${globalThis.workingDir}/dapp-frontend-erc20-messaging/packages/frontend`
       ),
       this._copyEnvFile(
         '.env.dapp-backend',
-        `${this._workingDir}/dapp-frontend-erc20-messaging/packages/backend`
+        `${globalThis.workingDir}/dapp-frontend-erc20-messaging/packages/backend`
       ),
       this._copyEnvFile(
         '.env.executor-service',
-        `${this._workingDir}/executor-service`
+        `${globalThis.workingDir}/executor-service`
       ),
-      this._copyEnvFile('.env.secrets', `${this._workingDir}`, `.env.secrets`),
-      defer(() => of(this._log('')))
-    ).pipe(concatAll())
+      this._copyEnvFile(
+        '.env.secrets',
+        `${globalThis.workingDir}`,
+        `.env.secrets`
+      ),
+      defer(() => of(log('')))
+    )
   }
 
   private _copyEnvFile(
@@ -233,7 +308,7 @@ export class StartCommand extends CommandRunner {
                 .pipe(
                   tap({
                     complete: () => {
-                      this._log(`✅ ${localEnvFileName} copied`)
+                      log(`✅ ${localEnvFileName} copied`)
                     },
                   })
                 )
@@ -241,7 +316,7 @@ export class StartCommand extends CommandRunner {
             }
           )
         } else {
-          this._log(`✅ ${localEnvFileName} already existing`)
+          log(`✅ ${localEnvFileName} already exists`)
           subscriber.complete()
         }
       })
@@ -249,29 +324,29 @@ export class StartCommand extends CommandRunner {
   }
 
   private _runLocalERC20MessagingInfra() {
-    const secretsFilePath = `${this._workingDir}/.env.secrets`
-    const executionPath = `${this._workingDir}/local-erc20-messaging-infra`
+    const secretsFilePath = `${globalThis.workingDir}/.env.secrets`
+    const executionPath = `${globalThis.workingDir}/local-erc20-messaging-infra`
 
-    return of(
-      defer(() => of(this._log(`Running the ERC20 messaging infra...`))),
+    return concat(
+      defer(() => of(log(`Running the ERC20 messaging infra...`))),
       this._spawn.reactify(
         `source ${secretsFilePath} && cd ${executionPath} && docker compose up -d`
       ),
-      defer(() => of(this._log(`✅ Subnets & TCE are running`), this._log(``)))
-    ).pipe(concatAll())
+      defer(() => of(log(`✅ Subnets & TCE are running`), log(``)))
+    )
   }
 
   private _retrieveAndWriteContractAddressesToEnv() {
-    const frontendEnvFilePath = `${this._workingDir}/dapp-frontend-erc20-messaging/packages/frontend/.env`
-    const executorServiceEnvFilePath = `${this._workingDir}/executor-service/.env`
+    const frontendEnvFilePath = `${globalThis.workingDir}/dapp-frontend-erc20-messaging/packages/frontend/.env`
+    const executorServiceEnvFilePath = `${globalThis.workingDir}/executor-service/.env`
 
-    return of(
-      defer(() => of(this._log(`Retrieving contract addresses...`))),
+    return concat(
+      defer(() => of(log(`Retrieving contract addresses...`))),
       this._spawn.reactify(
-        `docker cp contracts-topos:/contracts/.env ${this._workingDir}/.env.addresses`
+        `docker cp contracts-topos:/contracts/.env ${globalThis.workingDir}/.env.addresses`
       ),
       this._spawn.reactify(
-        `source ${this._workingDir}/.env.addresses \
+        `source ${globalThis.workingDir}/.env.addresses \
         && echo "VITE_SUBNET_REGISTRATOR_CONTRACT_ADDRESS=$SUBNET_REGISTRATOR_CONTRACT_ADDRESS" >> ${frontendEnvFilePath} \
         && echo "VITE_TOPOS_CORE_CONTRACT_ADDRESS=$TOPOS_CORE_PROXY_CONTRACT_ADDRESS" >> ${frontendEnvFilePath} \
         && echo "VITE_ERC20_MESSAGING_CONTRACT_ADDRESS=$ERC20_MESSAGING_CONTRACT_ADDRESS" >> ${frontendEnvFilePath} \
@@ -280,44 +355,42 @@ export class StartCommand extends CommandRunner {
       ),
       defer(() =>
         of(
-          this._log(
-            `✅ Contract addresses were retrieved and written to env files`
-          ),
-          this._log(``)
+          log(`✅ Contract addresses were retrieved and written to env files`),
+          log(``)
         )
       )
-    ).pipe(concatAll())
+    )
   }
 
   private _runRedis() {
     const containerName = 'redis-stack-server'
 
-    return of(
-      defer(() => of(this._log(`Running the redis server...`))),
+    return concat(
+      defer(() => of(log(`Running the redis server...`))),
       this._spawn.reactify(
         `docker start ${containerName} 2>/dev/null || docker run -d --name ${containerName} -p 6379:6379 redis/redis-stack-server:latest`
       ),
-      defer(() => of(this._log(`✅ redis is running`), this._log(``)))
-    ).pipe(concatAll())
+      defer(() => of(log(`✅ redis is running`), log(``)))
+    )
   }
 
   private _runExecutorService() {
-    const secretsFilePath = `${this._workingDir}/.env.secrets`
-    const executionPath = `${this._workingDir}/executor-service`
+    const secretsFilePath = `${globalThis.workingDir}/.env.secrets`
+    const executionPath = `${globalThis.workingDir}/executor-service`
 
-    return of(
-      defer(() => of(this._log(`Running the Executor Service...`))),
+    return concat(
+      defer(() => of(log(`Running the Executor Service...`))),
       this._npmInstall(executionPath),
       this._startExecutorService(secretsFilePath, executionPath),
-      defer(() => of(this._log(``)))
-    ).pipe(concatAll())
+      defer(() => of(log(``)))
+    )
   }
 
   private _npmInstall(executionPath: string) {
     return this._spawn.reactify(`cd ${executionPath} && npm install`).pipe(
       tap({
         complete: () => {
-          this._log(`✅ Deps are installed`)
+          log(`✅ Deps are installed`)
         },
       })
     )
@@ -335,23 +408,23 @@ export class StartCommand extends CommandRunner {
       .pipe(
         tap({
           complete: () => {
-            this._log(`✅ Web server is running`)
+            log(`✅ Web server is running`)
           },
         })
       )
   }
 
   private _rundDappFrontendService() {
-    const secretsFilePath = `${this._workingDir}/.env.secrets`
-    const executionPath = `${this._workingDir}/dapp-frontend-erc20-messaging`
+    const secretsFilePath = `${globalThis.workingDir}/.env.secrets`
+    const executionPath = `${globalThis.workingDir}/dapp-frontend-erc20-messaging`
 
-    return of(
-      defer(() => of(this._log(`Running the dApp Frontend...`))),
+    return concat(
+      defer(() => of(log(`Running the dApp Frontend...`))),
       this._npmInstall(executionPath),
       this._buildDappFrontend(secretsFilePath, executionPath),
       this._startDappFrontend(secretsFilePath, executionPath),
-      defer(() => of(this._log(``)))
-    ).pipe(concatAll())
+      defer(() => of(log(``)))
+    )
   }
 
   private _buildDappFrontend(secretsFilePath: string, executionPath: string) {
@@ -362,7 +435,7 @@ export class StartCommand extends CommandRunner {
       .pipe(
         tap({
           complete: () => {
-            this._log(`✅ Static files are built`)
+            log(`✅ Static files are built`)
           },
         })
       )
@@ -377,19 +450,9 @@ export class StartCommand extends CommandRunner {
       .pipe(
         tap({
           complete: () => {
-            this._log(`✅ Web server is running`)
+            log(`✅ Web server is running`)
           },
         })
       )
-  }
-
-  private _log(logMessage: string) {
-    this._loggerConsole.info(logMessage)
-    this._loggerFile.info(logMessage)
-  }
-
-  private _logError(errorMessage: string) {
-    this._loggerConsole.error(errorMessage)
-    this._loggerConsole.error(`Find more details in ${this._logFilePath}`)
   }
 }

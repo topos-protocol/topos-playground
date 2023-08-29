@@ -1,130 +1,164 @@
-import { stat } from 'fs'
+import { stat, readdir } from 'fs'
 import { Command, CommandRunner } from 'nest-commander'
-import { concatAll } from 'rxjs/operators'
-import { defer, EMPTY, Observable, of } from 'rxjs'
+import { Observable, catchError, concat, concatMap, of, tap } from 'rxjs'
 import { homedir } from 'os'
 
-import { Next, ReactiveSpawn } from '../ReactiveSpawn'
-import { workingDir } from 'src/constants'
-import { createLoggerFile, loggerConsole } from 'src/loggers'
-import { randomUUID } from 'crypto'
+import { ReactiveSpawn } from '../ReactiveSpawn'
+import { log, logError } from '../loggers'
 
 @Command({
   name: 'clean',
-  description: 'Clean artifacts from a previous start',
+  description:
+    'Shut down Playground docker containers, and clean up the working directory',
 })
 export class CleanCommand extends CommandRunner {
-  private _workingDir = workingDir
-  private _loggerConsole = loggerConsole
-  private _logFilePath = `logs/log-${randomUUID()}.log`
-  private _loggerFile = createLoggerFile(this._logFilePath)
-
   constructor(private _spawn: ReactiveSpawn) {
     super()
   }
 
-  async run(): Promise<void> {
-    this._log(`Welcome to Topos-Playground!`)
-    this._log(``)
+  async run() {
+    log(`Cleaning up Topos-Playground...`)
+    log(``)
 
-    of(
+    concat(
       this._verifyWorkingDirectoryExistence(),
-      this._shutdownFullMsgProtocolInfra(),
+      this._verifyExecutionPathExistence(),
+      this._shutdownERC20MessagingProtocolInfra(),
       this._shutdownRedis(),
-      this._removeWorkingDir()
-    )
-      .pipe(concatAll())
-      .subscribe({
-        complete: () => {
-          this._log(`🧹 Everything is clean! 🧹`)
-          this._log(`Logs were written to ${this._logFilePath}`)
-        },
-        error: () => {},
-        next: (data: Next) => {
-          if (data && data.hasOwnProperty('origin')) {
-            if (data.origin === 'stderr') {
-              this._loggerFile.error(data.output)
-            } else if (data.origin === 'stdout') {
-              this._loggerFile.info(data.output)
-            }
-          }
-        },
-      })
+      this._removeWorkingDirectory()
+    ).subscribe()
   }
 
   private _verifyWorkingDirectoryExistence() {
     return new Observable((subscriber) => {
-      stat(this._workingDir, (error) => {
+      stat(globalThis.workingDir, (error, stats) => {
         if (error) {
-          this._logError(
-            `Working directory have not been found, nothing to clean!`
+          globalThis.workingDirExists = false
+          log(
+            `Working directory (${globalThis.workingDir}) is not found; nothing to clean.`
           )
+          subscriber.next()
+          subscriber.complete()
+        } else if (!stats.isDirectory()) {
+          logError(
+            `The working directory (${globalThis.workingDir}) is not a directory; this is an error!`
+          )
+          globalThis.workingDirExists = false
           subscriber.error()
         } else {
+          readdir(globalThis.workingDir, (err, files) => {
+            if (err) {
+              globalThis.workingDirExists = false
+              logError(
+                `Error while trying to read the working directory (${globalThis.workingDir})`
+              )
+              subscriber.error()
+            }
+
+            if (files.length === 0) {
+              globalThis.workingDirExists = false
+              log(
+                `Working directory (${globalThis.workingDir}) is empty; nothing to clean.`
+              )
+              subscriber.next()
+              subscriber.complete()
+            } else {
+              globalThis.workingDirExists = true
+              log(`Found working directory (${globalThis.workingDir})`)
+              subscriber.next()
+              subscriber.complete()
+            }
+          })
+        }
+      })
+    })
+  }
+
+  private _verifyExecutionPathExistence() {
+    return new Observable((subscriber) => {
+      stat(globalThis.executionPath, (error) => {
+        if (error) {
+          globalThis.executionPathExists = false
+          log(`Execution path (${globalThis.executionPath}) not found`)
+          subscriber.next()
+          subscriber.complete()
+        } else {
+          globalThis.executionPathExists = true
+          log(`Found execution path (${globalThis.executionPath})`)
+          subscriber.next()
           subscriber.complete()
         }
       })
     })
   }
 
-  private _shutdownFullMsgProtocolInfra() {
-    const executionPath = `${this._workingDir}/local-erc20-messaging-infra`
-
-    return of(
-      defer(() => of(this._log(`Shutting down the ERC20 messaging infra...`))),
-      this._spawn.reactify(`cd ${executionPath} && docker compose down -v`),
-      defer(() => of(this._log(`✅ subnets & TCE are down`), this._log(``)))
-    ).pipe(concatAll())
+  private _shutdownERC20MessagingProtocolInfra() {
+    return new Observable((subscriber) => {
+      log('')
+      if (globalThis.executionPathExists) {
+        log(`Shutting down the ERC20 messaging infra...`)
+        this._spawn
+          .reactify(`cd ${globalThis.executionPath} && docker compose down -v`)
+          .subscribe(subscriber)
+        log(`✅ subnets & TCE are down`)
+      } else {
+        log(`✅ ERC20 messaging infra is not running; subnets & TCE are down`)
+        subscriber.complete()
+      }
+    })
   }
 
   private _shutdownRedis() {
     const containerName = 'redis-stack-server'
 
-    return of(
-      defer(() => of(this._log(`Shutting down the redis server...`))),
-      this._spawn.reactify(`docker rm -f ${containerName}`),
-      defer(() => of(this._log(`✅ redis is down`), this._log(``)))
-    ).pipe(concatAll())
+    return this._spawn
+      .reactify(`docker ps --format '{{.Names}}' | grep ${containerName}`)
+      .pipe(
+        concatMap((data) => {
+          if (
+            data &&
+            data.output &&
+            `${data.output}`.indexOf(containerName) !== -1
+          ) {
+            log('')
+            log(`Shutting down the redis server...`)
+
+            return this._spawn.reactify(`docker rm -f ${containerName}`).pipe(
+              tap({
+                complete: () => {
+                  log(`✅ redis is down`)
+                },
+              })
+            )
+          } else {
+            of(log(`✅ redis is not running; nothing to shut down`))
+          }
+        }),
+        catchError((error) => of(error))
+      )
   }
 
-  private _removeWorkingDir() {
+  private _removeWorkingDirectory() {
     const homeDir = homedir()
-
-    return of(
-      defer(() => of(this._log(`Removing the working directory...`))),
-      // Let's make sure we're not removing something we shouldn't
-      this._workingDir.indexOf(homeDir) !== -1 && this._workingDir !== homeDir
-        ? of(
-            this._spawn.reactify(`rm -rf ${this._workingDir}`),
-            defer(() =>
-              of(
-                this._log('✅ Working directory has been removed'),
-                this._log(``)
-              )
-            )
-          ).pipe(concatAll())
-        : of(
-            EMPTY,
-            defer(() =>
-              of(
-                this._logError(
-                  `Working directory (${this._workingDir}) is not safe for removal!`
-                ),
-                this._log(``)
-              )
-            )
-          ).pipe(concatAll())
-    ).pipe(concatAll())
-  }
-
-  private _log(logMessage: string) {
-    this._loggerConsole.info(logMessage)
-    this._loggerFile.info(logMessage)
-  }
-
-  private _logError(errorMessage: string) {
-    this._loggerConsole.error(errorMessage)
-    this._loggerFile.error(errorMessage)
-    this._loggerConsole.error(`👉 Find more details in ${this._logFilePath}`)
+    return new Observable((subscriber) => {
+      if (
+        globalThis.workingDirExists &&
+        globalThis.workingDir.indexOf(homeDir) !== -1 &&
+        globalThis.workingDir !== homeDir
+      ) {
+        log('')
+        log(`Cleaning up the working directory (${globalThis.workingDir})`)
+        this._spawn.reactify(`rm -rf ${globalThis.workingDir}`).subscribe({
+          complete: () => {
+            log('✅ Working directory has been removed')
+            subscriber.complete()
+          },
+        })
+      } else {
+        log('')
+        log(`✅ Working direction does not exist; nothing to clean`)
+        subscriber.complete()
+      }
+    })
   }
 }
