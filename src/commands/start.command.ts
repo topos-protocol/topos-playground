@@ -56,11 +56,7 @@ export class StartCommand extends CommandRunner {
       },
       next: (data: Next) => {
         if (globalThis.verbose && data && data.hasOwnProperty('output')) {
-          if (data.origin === 'stderr') {
-            logError(`${data.output}`)
-          } else {
-            logToFile(`${data.output}`)
-          }
+          logToFile(`${data.output}`)
         }
       },
     })
@@ -204,7 +200,7 @@ export class StartCommand extends CommandRunner {
       defer(() => of(log('Cloning repositories...'))),
       this._cloneGitRepository(
         'topos-protocol',
-        'local-erc20-messaging-infra',
+        'local-erc20-messaging-infraa',
         INFRA_REF
       ),
       this._cloneGitRepository(
