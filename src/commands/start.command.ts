@@ -23,7 +23,7 @@ export class StartCommand extends CommandRunner {
     super()
   }
 
-  async run(): Promise<void> {
+  async run() {
     log(`Starting Topos-Playground...`)
     log(``)
 
@@ -50,12 +50,17 @@ export class StartCommand extends CommandRunner {
         )
         log(`ℹ️  Logs were written to ${logFilePath}`)
       },
-      error: (error) => {
-        logError(`❗ ${error}`)
+      error: () => {
+        logError('❗ Error')
+        process.exit(1)
       },
       next: (data: Next) => {
         if (globalThis.verbose && data && data.hasOwnProperty('output')) {
-          logToFile(`${data.output}`)
+          if (data.origin === 'stderr') {
+            logError(`${data.output}`)
+          } else {
+            logToFile(`${data.output}`)
+          }
         }
       },
     })
