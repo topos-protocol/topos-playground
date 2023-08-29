@@ -200,7 +200,7 @@ export class StartCommand extends CommandRunner {
       defer(() => of(log('Cloning repositories...'))),
       this._cloneGitRepository(
         'topos-protocol',
-        'local-erc20-messaging-infraa',
+        'local-erc20-messaging-infra',
         INFRA_REF
       ),
       this._cloneGitRepository(
