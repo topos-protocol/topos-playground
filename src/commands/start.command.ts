@@ -6,9 +6,9 @@ import { satisfies } from 'semver'
 import { log, logError, logToFile } from '../loggers'
 import { Next, ReactiveSpawn } from '../ReactiveSpawn'
 
-const EXECUTOR_SERVICE_REF = 'v0.1.1'
-const FRONTEND_REF = 'v0.1.0-alpha3'
-const INFRA_REF = 'v0.1.5'
+const EXECUTOR_SERVICE_REF = 'v0.2.0'
+const FRONTEND_REF = 'v0.1.4'
+const INFRA_REF = 'v0.1.6'
 const MIN_VERSION_DOCKER = '17.6.0'
 const MIN_VERSION_GIT = '2.0.0'
 const MIN_VERSION_NODE = '16.0.0'
@@ -348,10 +348,10 @@ export class StartCommand extends CommandRunner {
       this._spawn.reactify(
         `source ${globalThis.workingDir}/.env.addresses \
         && echo "VITE_SUBNET_REGISTRATOR_CONTRACT_ADDRESS=$SUBNET_REGISTRATOR_CONTRACT_ADDRESS" >> ${frontendEnvFilePath} \
-        && echo "VITE_TOPOS_CORE_CONTRACT_ADDRESS=$TOPOS_CORE_PROXY_CONTRACT_ADDRESS" >> ${frontendEnvFilePath} \
+        && echo "VITE_TOPOS_CORE_PROXY_CONTRACT_ADDRESS=$TOPOS_CORE_PROXY_CONTRACT_ADDRESS" >> ${frontendEnvFilePath} \
         && echo "VITE_ERC20_MESSAGING_CONTRACT_ADDRESS=$ERC20_MESSAGING_CONTRACT_ADDRESS" >> ${frontendEnvFilePath} \
         && echo "SUBNET_REGISTRATOR_CONTRACT_ADDRESS=$SUBNET_REGISTRATOR_CONTRACT_ADDRESS" >> ${executorServiceEnvFilePath} \
-        && echo "TOPOS_CORE_CONTRACT_ADDRESS=$TOPOS_CORE_PROXY_CONTRACT_ADDRESS" >> ${executorServiceEnvFilePath}`
+        && echo "TOPOS_CORE_PROXY_CONTRACT_ADDRESS=$TOPOS_CORE_PROXY_CONTRACT_ADDRESS" >> ${executorServiceEnvFilePath}`
       ),
       defer(() =>
         of(
