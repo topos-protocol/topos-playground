@@ -40,4 +40,4 @@ jobs:
         if: always()
         with:
           name: logs
-          path: $HOME/topos-playground/logs
+          path: /home/runner/.local/state/topos-playground/logs
