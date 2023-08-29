@@ -1,6 +1,14 @@
 import { stat, readdir } from 'fs'
 import { Command, CommandRunner } from 'nest-commander'
-import { Observable, concat } from 'rxjs'
+import {
+  Observable,
+  catchError,
+  concat,
+  concatMap,
+  of,
+  tap,
+  throwError,
+} from 'rxjs'
 import { homedir } from 'os'
 
 import { Next, ReactiveSpawn } from '../ReactiveSpawn'
@@ -114,37 +122,31 @@ export class CleanCommand extends CommandRunner {
   private _shutdownRedis() {
     const containerName = 'redis-stack-server'
 
-    return new Observable((subscriber) => {
-      this._spawn
-        .reactify(`docker ps --format '{{.Names}}' | grep ${containerName}`)
-        .subscribe({
-          next: (data: Next) => {
-            if (
-              data &&
-              data.output &&
-              `${data.output}`.indexOf(containerName) !== -1
-            ) {
-              log('')
-              log(`Shutting down the redis server...`)
+    return this._spawn
+      .reactify(`docker ps --format '{{.Names}}' | grep ${containerName}`)
+      .pipe(
+        concatMap((data) => {
+          if (
+            data &&
+            data.output &&
+            `${data.output}`.indexOf(containerName) !== -1
+          ) {
+            log('')
+            log(`Shutting down the redis server...`)
 
-              this._spawn.reactify(`docker rm -f ${containerName}`).subscribe({
+            return this._spawn.reactify(`docker rm -f ${containerName}`).pipe(
+              tap({
                 complete: () => {
                   log(`✅ redis is down`)
                 },
               })
-            } else {
-              log(`✅ redis is not running; nothing to shut down`)
-            }
-            subscriber.complete()
-          },
-          error: () => {
-            subscriber.complete()
-          },
-          complete: () => {
-            subscriber.complete()
-          },
-        })
-    })
+            )
+          } else {
+            of(log(`✅ redis is not running; nothing to shut down`))
+          }
+        }),
+        catchError((error) => of(error))
+      )
   }
 
   private _removeWorkingDirectory() {

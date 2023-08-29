@@ -1,14 +1,17 @@
 import { readFile, stat } from 'fs'
-import { Command, CommandRunner, InquirerService } from 'nest-commander'
+import { Command, CommandRunner } from 'nest-commander'
 import { concat, defer, Observable, of, tap } from 'rxjs'
 import { satisfies } from 'semver'
 
 import { log, logError, logToFile } from '../loggers'
 import { Next, ReactiveSpawn } from '../ReactiveSpawn'
 
-const INFRA_REF = 'v0.1.5'
-const FRONTEND_REF = 'v0.1.0-alpha3'
 const EXECUTOR_SERVICE_REF = 'v0.1.1'
+const FRONTEND_REF = 'v0.1.0-alpha3'
+const INFRA_REF = 'v0.1.5'
+const MIN_VERSION_DOCKER = '17.6.0'
+const MIN_VERSION_GIT = '2.0.0'
+const MIN_VERSION_NODE = '16.0.0'
 
 @Command({
   name: 'start',
@@ -16,10 +19,7 @@ const EXECUTOR_SERVICE_REF = 'v0.1.1'
     'Verify that all dependencies are installed, clone any needed repositories, setup the environment, and start all of the docker containers for the Playground',
 })
 export class StartCommand extends CommandRunner {
-  constructor(
-    private _spawn: ReactiveSpawn,
-    private readonly inquirer: InquirerService
-  ) {
+  constructor(private _spawn: ReactiveSpawn) {
     super()
   }
 
@@ -85,14 +85,17 @@ export class StartCommand extends CommandRunner {
             let match = RegExp(/Docker version ([0-9]+\.[0-9]+\.[0-9]+)/).exec(
               `${data.output}`
             )
-            if (match && satisfies(match[1], '>=17.6.0')) {
-              log(`✅ Docker -- Version: ${match[1]}`)
-            } else {
-              log(`❌ Docker -- Version: ${match[1]}`)
-              throw new Error(
-                `Docker ${match[1]} is not supported\n` +
-                  'Please upgrade Docker to version 17.06.0 or higher.'
-              )
+
+            if (match && match.length > 1) {
+              if (satisfies(match[1], `>=${MIN_VERSION_DOCKER}`)) {
+                log(`✅ Docker -- Version: ${match[1]}`)
+              } else {
+                log(`❌ Docker -- Version: ${match[1]}`)
+                throw new Error(
+                  `Docker ${match[1]} is not supported\n` +
+                    'Please upgrade Docker to version 17.06.0 or higher.'
+                )
+              }
             }
           }
         },
@@ -111,14 +114,17 @@ export class StartCommand extends CommandRunner {
             let match = RegExp(/git version ([0-9]+\.[0-9]+\.[0-9]+)/).exec(
               `${data.output}`
             )
-            if (match && satisfies(match[1], '>=2.0.0')) {
-              log(`✅ Git -- Version: ${match[1]}`)
-            } else {
-              logError(`❌ Git -- Version: ${match[1]}`)
-              throw new Error(
-                `Git ${match[1]} is not supported\n` +
-                  'Please upgrade Git to version 2.0.0 or higher.'
-              )
+
+            if (match && match.length > 1) {
+              if (satisfies(match[1], `>=${MIN_VERSION_GIT}`)) {
+                log(`✅ Git -- Version: ${match[1]}`)
+              } else {
+                logError(`❌ Git -- Version: ${match[1]}`)
+                throw new Error(
+                  `Git ${match[1]} is not supported\n` +
+                    'Please upgrade Git to version 2.0.0 or higher.'
+                )
+              }
             }
           }
         },
@@ -137,14 +143,17 @@ export class StartCommand extends CommandRunner {
             let match = RegExp(/v([0-9]+\.[0-9]+\.[0-9]+)/).exec(
               `${data.output}`
             )
-            if (match && satisfies(match[1], '>=16.0.0')) {
-              log(`✅ Node.js -- Version: ${match[1]}`)
-            } else {
-              log(`❌ Node.js -- Version: ${match[1]}`)
-              throw new Error(
-                `Node.js ${match[1]} is not supported\n` +
-                  'Please upgrade Node.js to version 16.0.0 or higher.'
-              )
+
+            if (match && match.length > 1) {
+              if (satisfies(match[1], `>=${MIN_VERSION_NODE}`)) {
+                log(`✅ Node.js -- Version: ${match[1]}`)
+              } else {
+                log(`❌ Node.js -- Version: ${match[1]}`)
+                throw new Error(
+                  `Node.js ${match[1]} is not supported\n` +
+                    'Please upgrade Node.js to version 16.0.0 or higher.'
+                )
+              }
             }
           }
         },
