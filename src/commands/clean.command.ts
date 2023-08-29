@@ -1,17 +1,9 @@
 import { stat, readdir } from 'fs'
 import { Command, CommandRunner } from 'nest-commander'
-import {
-  Observable,
-  catchError,
-  concat,
-  concatMap,
-  of,
-  tap,
-  throwError,
-} from 'rxjs'
+import { Observable, catchError, concat, concatMap, of, tap } from 'rxjs'
 import { homedir } from 'os'
 
-import { Next, ReactiveSpawn } from '../ReactiveSpawn'
+import { ReactiveSpawn } from '../ReactiveSpawn'
 import { log, logError } from '../loggers'
 
 @Command({
@@ -28,16 +20,13 @@ export class CleanCommand extends CommandRunner {
     log(`Cleaning up Topos-Playground...`)
     log(``)
 
-    this._verifyWorkingDirectoryExistence().subscribe(() => {
-      this._verifyExecutionPathExistence().subscribe(() => {
-        // Coordinate the steps to clean up the environment
-        concat(
-          this._shutdownERC20MessagingProtocolInfra(),
-          this._shutdownRedis(),
-          this._removeWorkingDirectory()
-        ).subscribe()
-      })
-    })
+    concat(
+      this._verifyWorkingDirectoryExistence(),
+      this._verifyExecutionPathExistence(),
+      this._shutdownERC20MessagingProtocolInfra(),
+      this._shutdownRedis(),
+      this._removeWorkingDirectory()
+    ).subscribe()
   }
 
   private _verifyWorkingDirectoryExistence() {
