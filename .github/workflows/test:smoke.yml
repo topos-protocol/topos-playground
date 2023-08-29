@@ -27,7 +27,7 @@ jobs:
         run: node dist/main --help
 
       - name: Smoke start command
-        run: node dist/main start -v | tee >(grep -q "🔥 Everything is done! 🔥" && pkill -P $$)
+        run: (node dist/main start -v | tee >(grep -q "🔥 Everything is done! 🔥" && pkill -P $$); [ $? -eq 143 ])
 
       - name: Smoke clean command
         run: node dist/main clean -v
