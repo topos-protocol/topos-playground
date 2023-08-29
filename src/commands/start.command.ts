@@ -235,7 +235,7 @@ export class StartCommand extends CommandRunner {
             .reactify(
               `git clone --depth 1 ${
                 branch ? `--branch ${branch}` : ''
-              } git@github.com:${organizationName}/${repositoryName}.git ${
+              } https://github.com/${organizationName}/${repositoryName}.git ${
                 globalThis.workingDir
               }/${repositoryName}`
             )
