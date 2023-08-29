@@ -4,7 +4,7 @@ on:
   pull_request:
     branches:
       - main
-      
+
 jobs:
   smoke-test:
     runs-on: ubuntu-latest-16-core
@@ -16,6 +16,9 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
+
+      - name: Set git config
+        run: git config --global url.https://.insteadOf git://
       
       - name: Install deps
         run: npm ci
