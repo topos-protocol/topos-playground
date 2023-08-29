@@ -14,5 +14,5 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: node dist/main --help
-      - run: node dist/main start
-      - run: node dist/main clean
+      - run: node dist/main start -v
+      - run: node dist/main clean -v
