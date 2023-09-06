@@ -114,7 +114,7 @@ For community help or discussion, you can join the Topos Discord server:
 
 ### Troubleshooting
 
-#### `Running the redis server...❗ Error`
+* `Running the redis server...❗ Error`
 
 The container that provides the Redis service was unable to start. This is likely because you are already running a Redis instance on your system. Try shutting it down.
 
@@ -143,13 +143,13 @@ If you manually installed and started Redis, you will need to manually stop it.
 $ redis-cli shutdown
 ```
 
-#### `Error: failed to create network local-erc20-messaging-infra-docker: Error response from daemon: could not find an available, non-overlapping IPv4 address pool among the defaults to assign to the network`
+* `Error: failed to create network local-erc20-messaging-infra-docker: Error response from daemon: could not find an available, non-overlapping IPv4 address pool among the defaults to assign to the network`
 
 The likely cause of this error is that you are running a VPN of some sort.
 
 The quick fix for this is to shut down your VPN, and then try to run the playground again.
 
-#### `Error: Error response from daemon: driver failed programming external connectivity on endpoint infra-tce-boot-1 (145130455efa244316eb0570064adb584e2c99d18fa2cd8f58b2774f1144d2bb):  (iptables failed: iptables --wait -t nat -A DOCKER -p tcp -d 0/0 --dport 32807 -j DNAT --to-destination 172.21.0.9:9090 ! -i br-de97b637b33b: iptables v1.8.7 (nf_tables): unknown option "--to-destination"`
+* `Error: Error response from daemon: driver failed programming external connectivity on endpoint infra-tce-boot-1 (145130455efa244316eb0570064adb584e2c99d18fa2cd8f58b2774f1144d2bb):  (iptables failed: iptables --wait -t nat -A DOCKER -p tcp -d 0/0 --dport 32807 -j DNAT --to-destination 172.21.0.9:9090 ! -i br-de97b637b33b: iptables v1.8.7 (nf_tables): unknown option "--to-destination"`
 
 If this error occurs, you are running Linux, and you have recently done an OS upgrade, try rebooting your system. If the problem persists, first ensure that you can load the 'xt_nat' kernel module:
 
