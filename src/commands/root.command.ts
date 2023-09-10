@@ -49,8 +49,6 @@ export class Root extends CommandRunner {
   }
 
   async run(_, options): Promise<void> {
-    console.table(options)
-
     if (!(options.version || options.verbose || options.quiet)) {
       this.command.help()
     }
