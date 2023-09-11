@@ -5,7 +5,7 @@
   <img src="./.github/assets/topos_logo_dark.png#gh-dark-mode-only" alt="Logo" width="200">
   <br />
   <p align="center">
-  <b>Topos Playground</b> is a CLI to make it simple to run a local Topos devnet 🚀
+  <b>Topos Playground</b> is a CLI (command-line interface) to run a local Topos devnet 🚀
   </p>
   <br />
 </div>
