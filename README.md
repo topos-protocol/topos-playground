@@ -79,7 +79,7 @@ This will check that the required prerequisites are met, and will then setup and
 $ topos-playground clean
 ```
 
-To clean up any still-running docker containers or filesystem artifacts from a previous invocation of the tops-playground, use the `clean` command.
+To clean up any still-running docker containers or filesystem artifacts from a previous invocation of the topos-playground, use the `clean` command.
 
 The playground respects XDG Base Directory Specifications, so by default, it will store
 data used while running in `$HOME/.local/share/topos-playground` and it will store logs
