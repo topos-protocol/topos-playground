@@ -55,7 +55,7 @@ $ npm run build && npm link
 
 ### Run the CLI
 
-If you have installed the via `npm` or `yarn`, you can run the CLI like any other command line tool:
+If you have installed the via `npm`, `yarn`, or manually after building it from the git repository, you can run the CLI like any other command line tool:
 
 ```
 $ topos-playground --help
