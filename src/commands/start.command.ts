@@ -55,11 +55,7 @@ export class StartCommand extends CommandRunner {
         process.exit(1)
       },
       next: (data: Next) => {
-        if (
-          globalThis.verbose &&
-          data &&
-          data.hasOwnProperty('output')
-        ) {
+        if (globalThis.verbose && data && data.hasOwnProperty('output')) {
           logToFile(`${data.output}`)
         }
       },
