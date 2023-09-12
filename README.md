@@ -149,6 +149,14 @@ The likely cause of this error is that you are running a VPN of some sort.
 
 The quick fix for this is to shut down your VPN, and then try to run the playground again.
 
+* `Error: Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?`
+
+If this error occurs, it likely means that your `dockerd` daemon is not running. Please consult the documentation for your OS and Docker installation to determine how to correctly restart it for your platform.
+
+* `docker: Error response from daemon: Conflict. The container name "/redis-stack-server" is already in use by container "1ccdeb3adf2259168a5f74697013eaab8d61fb18e123e0a4d06545ac4269cc94". You have to remove (or rename) that container to be able to reuse that name.`
+
+This error indicates that the `redis-stack-server` container is already running. This is likely because you have already ran the playground, but a `topos-playground clean` was never ran. To fix this, run `topos-playground clean` and then try again.
+
 * `Error: Error response from daemon: driver failed programming external connectivity on endpoint infra-tce-boot-1 (145130455efa244316eb0570064adb584e2c99d18fa2cd8f58b2774f1144d2bb):  (iptables failed: iptables --wait -t nat -A DOCKER -p tcp -d 0/0 --dport 32807 -j DNAT --to-destination 172.21.0.9:9090 ! -i br-de97b637b33b: iptables v1.8.7 (nf_tables): unknown option "--to-destination"`
 
 If this error occurs, you are running Linux, and you have recently done an OS upgrade, try rebooting your system. If the problem persists, first ensure that you can load the 'xt_nat' kernel module:
