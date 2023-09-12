@@ -144,6 +144,10 @@ If you manually installed and started Redis, you will need to manually stop it.
 $ redis-cli shutdown
 ```
 
+* `Error: info: unknown shorthand flag: 'd' in -d`
+
+If you see this error, you likely do not have Docker Compose installed. You need version 2 or greater. Refer to the [Docker Compose installation instructions](https://docs.docker.com/compose/install/) for your platform.
+
 * `Error: failed to create network local-erc20-messaging-infra-docker: Error response from daemon: could not find an available, non-overlapping IPv4 address pool among the defaults to assign to the network`
 
 The likely cause of this error is that you are running a VPN of some sort.
