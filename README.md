@@ -17,6 +17,7 @@ The Topos Playground is a CLI that allows you to easily run and manage a local T
 ### Requirements
 
 - [Docker](https://docs.docker.com/get-docker/_) version 17.06.0 or greater
+- [Docker Compose](https://docs.docker.com/compose/install/) version 2.0.0 or greater
 - [NodeJS](https://nodejs.dev/en/) version 16.0.0 or greater
 - Git
 
