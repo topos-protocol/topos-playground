@@ -12,7 +12,7 @@
 
 ## Getting Started
 
-The Topos Playground is a CLI that allows you to easily run and manage a local Topos devnet. It depends on Docker and NodeJS, and manages a number of components in order to locally run multiple subnets, multiple TCE nodes, and a dApp with supporting infrastructure, capable of cross-subnet messaging.
+The Topos Playground is a CLI that allows you to easily run and manage a local Topos devnet. It depends on Docker and NodeJS, and manages a number of components in order to locally run multiple subnets, multiple TCE nodes, and a dApp with supporting infrastructure, capable of cross-subnet messaging. For additional information about Topos and about this Playground CLI, take a look at the [Topos Developer Portal](https://docs.topos.technology).
 
 ### Requirements
 
@@ -101,6 +101,8 @@ To disable this, you can use the `--quiet` flag to prevent output from going to 
 $ topos-playground clean --quiet
 ```
 
+For more in-depth discussion about the playground components, and what the `topos-playground` is doing, take a look at the [Topos Playground components](https://docs.topos.technology/content/module-2/3-components.html) portion of the Topos Developer Portal.
+
 ### Development
 
 To contribute to the development of the playground, [fork](https://github.com/topos-protocol/topos-playground/fork) the repository.
@@ -144,6 +146,16 @@ If you manually installed and started Redis, you will need to manually stop it.
 $ redis-cli shutdown
 ```
 
+* `docker: Error response from daemon: Conflict. The container name "/redis-stack-server" is already in use by container "1ccdeb3adf2259168a5f74697013eaab8d61fb18e123e0a4d06545ac4269cc94". You have to remove (or rename) that container to be able to reuse that name.`
+
+This error indicates that the `redis-stack-server` container is already running. This is likely because you have already ran the playground, but a `topos-playground clean` was never ran. To fix this, run `topos-playground clean` and then try again.
+
+This may also sometimes occur if you have a local redis instance running. Refer to the instructions above for how to shut down a local redis instance.
+
+* `Error: service "contracts-incal" didn't complete successfully: exit 1`
+
+One cause of this error is a previous failure when starting the playground that wasn't cleaned up by running `topos-playground clean`. To fix this, run `topos-playground clean` and then try again.
+
 * `Error: info: unknown shorthand flag: 'd' in -d`
 
 If you see this error, you likely do not have Docker Compose installed. You need version 2 or greater. Refer to the [Docker Compose installation instructions](https://docs.docker.com/compose/install/) for your platform.
@@ -157,10 +169,6 @@ The quick fix for this is to shut down your VPN, and then try to run the playgro
 * `Error: Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?`
 
 If this error occurs, it likely means that your `dockerd` daemon is not running. Please consult the documentation for your OS and Docker installation to determine how to correctly restart it for your platform.
-
-* `docker: Error response from daemon: Conflict. The container name "/redis-stack-server" is already in use by container "1ccdeb3adf2259168a5f74697013eaab8d61fb18e123e0a4d06545ac4269cc94". You have to remove (or rename) that container to be able to reuse that name.`
-
-This error indicates that the `redis-stack-server` container is already running. This is likely because you have already ran the playground, but a `topos-playground clean` was never ran. To fix this, run `topos-playground clean` and then try again.
 
 * `Error: Error response from daemon: driver failed programming external connectivity on endpoint infra-tce-boot-1 (145130455efa244316eb0570064adb584e2c99d18fa2cd8f58b2774f1144d2bb):  (iptables failed: iptables --wait -t nat -A DOCKER -p tcp -d 0/0 --dport 32807 -j DNAT --to-destination 172.21.0.9:9090 ! -i br-de97b637b33b: iptables v1.8.7 (nf_tables): unknown option "--to-destination"`
 
