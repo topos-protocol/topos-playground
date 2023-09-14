@@ -14,6 +14,7 @@ export class ReactiveSpawn {
 
   reactify(command: string, options?: { runInBackground }) {
     return new Observable<Next>((subscriber) => {
+      let errBuffer = []
       if (globalThis.verbose) {
         log(`🏃 Running command: ${command}`)
       }
@@ -30,6 +31,7 @@ export class ReactiveSpawn {
 
       childProcess.stderr.on('data', (data: Buffer) => {
         const output = data.toString()
+        errBuffer.push(output)
         subscriber.next({ origin: 'stderr', output })
       })
 
@@ -37,7 +39,7 @@ export class ReactiveSpawn {
         if (!code) {
           subscriber.complete()
         } else {
-          subscriber.error()
+          subscriber.error(errBuffer.join('\n'))
         }
       })
     })

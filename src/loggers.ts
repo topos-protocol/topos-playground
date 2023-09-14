@@ -58,13 +58,11 @@ export function logToFile(logMessage: string) {
 
 export function logError(errorMessage: string) {
   let lines = errorMessage.split('\n')
+  lines.push('For more information about the Playground, refer to the [Topos Developer Portal](https://docs.topos.technology/content/module-2/1-topos-playground.html).')
+  lines.push(`Find the full log file in ${globalThis.logFilePath}`)
 
   for (let line of lines) {
     getLogConsole().error(line)
     getLogFile().error(line)
   }
-
-  const message = `Find the full log file in ${globalThis.logFilePath}`
-  getLogConsole().error(message)
-  getLogFile().error(message)
 }

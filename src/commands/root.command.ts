@@ -48,7 +48,11 @@ export class Root extends CommandRunner {
     super()
   }
 
-  async run(): Promise<void> {}
+  async run(_, options): Promise<void> {
+    if (!(options.version || options.verbose || options.quiet)) {
+      this.command.help()
+    }
+  }
 
   @Option({
     flags: '--version',
@@ -60,6 +64,8 @@ export class Root extends CommandRunner {
       overrideQuiet
     )
     log(``)
+
+    return true
   }
 
   @Option({
@@ -71,6 +77,8 @@ export class Root extends CommandRunner {
   })
   doVerbose() {
     globalThis.verbose = true
+
+    return true
   }
 
   @Option({
@@ -82,6 +90,8 @@ export class Root extends CommandRunner {
   })
   doQuiet() {
     globalThis.quiet = true
+
+    return true
   }
 
   @Option({
@@ -90,5 +100,7 @@ export class Root extends CommandRunner {
   })
   doNoLog() {
     globalThis.noLog = true
+
+    return true
   }
 }

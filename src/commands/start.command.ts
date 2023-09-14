@@ -50,8 +50,8 @@ export class StartCommand extends CommandRunner {
         )
         log(`ℹ️  Logs were written to ${logFilePath}`)
       },
-      error: () => {
-        logError('❗ Error')
+      error: (errBuffer) => {
+        logError(`❗ Error:\n${errBuffer}`)
         process.exit(1)
       },
       next: (data: Next) => {
