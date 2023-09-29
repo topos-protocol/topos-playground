@@ -26,7 +26,14 @@ export class CleanCommand extends CommandRunner {
       this._shutdownERC20MessagingProtocolInfra(),
       this._shutdownRedis(),
       this._removeWorkingDirectory()
-    ).subscribe()
+    ).subscribe({
+      complete: () => {
+        log(`🔥 Everything is done! 🔥`)
+        log(``)
+        log(`❗Important❗`)
+        log(`Before starting the Topos Playground again, you must reset your MetaMask Account Data in order to reset the nonce count. Refer to "https://support.metamask.io/hc/en-us/articles/360015488891-How-to-clear-your-account-activity-reset-account" for more information.`)
+      }
+    })
   }
 
   private _verifyWorkingDirectoryExistence() {

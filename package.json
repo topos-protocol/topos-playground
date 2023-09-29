@@ -1,6 +1,6 @@
 {
   "name": "@topos-protocol/topos-playground",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "topos-playground is a CLI tool which handles all of the orchestration necessary to run local Topos devnets with subnets, a TCE network, and apps.",
   "author": "Sébastien Dan <sebastien.dan@gmail.com>",
   "license": "MIT",
@@ -29,6 +29,7 @@
     "@nestjs/cli": "^9.0.0",
     "@nestjs/schematics": "^9.0.0",
     "@nestjs/testing": "^9.0.0",
+    "@topos-protocol/topos-playground": "0.1.0",
     "@types/jest": "28.1.8",
     "@types/node": "^16.0.0",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
