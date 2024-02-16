@@ -6,9 +6,12 @@ import { satisfies } from 'semver'
 import { log, logError, logToFile } from '../loggers'
 import { Next, ReactiveSpawn } from '../ReactiveSpawn'
 
-const EXECUTOR_SERVICE_REF = 'v1.1.0'
-const FRONTEND_REF = 'v1.2.0'
-const INFRA_REF = 'v2.3.2'
+// Fetched from https://github.com/topos-protocol/dapp-frontend-erc20-messaging/releases
+const EXECUTOR_SERVICE_REF = 'v1.2.0'
+// Fetched from https://github.com/topos-protocol/dapp-frontend-erc20-messaging/releases
+const FRONTEND_REF = 'v1.3.0'
+// Fetched from https://github.com/topos-protocol/local-erc20-messaging-infra/releases
+const INFRA_REF = 'v2.5.0'
 const MIN_VERSION_DOCKER = '17.6.0'
 const MIN_VERSION_GIT = '2.0.0'
 const MIN_VERSION_NODE = '16.0.0'
