@@ -109,6 +109,26 @@ To contribute to the development of the playground, [fork](https://github.com/to
 
 Do your work within a branch on your fork. When it is ready, create a Pull Request that clearly explains the reasoning behind your code changes, what they do, and anything that we should be aware of when testing your code.
 
+#### Update the stack
+
+Versions of the components used by the Topos Playground are defined in the [start command](https://github.com/topos-protocol/topos-playground/blob/main/src/commands/start.command.ts):
+
+```
+EXECUTOR_SERVICE_REF: Version of the Executor Service
+FRONTEND_REF: Version of the ERC20Messaging Frontend
+INFRA_REF: Version of the ERC20Messaging Infrastracture
+```
+
+The latest version available for these components can be found on the Release page of their repositoriy:
+
+- [Executor Service](https://github.com/topos-protocol/executor-service/releases)
+- [ERC20Messaging Frontend](https://github.com/topos-protocol/dapp-frontend-erc20-messaging/releases)
+- [ERC20Messaging Infra](https://github.com/topos-protocol/local-erc20-messaging-infra/releases)
+
+To update the Topos Playground with the latest version of these components, open a PR with a change in the constants mentioned here above.
+
+_**Important**: The ERC20Messaging Infra component works itself with internal versioned components (e.g., the Topos CLI, smart contracts, etc.). Make sure you use the right latest version or create a new one there first and then use it here._
+
 ### Discussion
 
 For community help or discussion, you can join the Topos Discord server:
@@ -117,7 +137,7 @@ For community help or discussion, you can join the Topos Discord server:
 
 ### Troubleshooting
 
-* `Running the redis server...❗ Error`
+- `Running the redis server...❗ Error`
 
 The container that provides the Redis service was unable to start. This is likely because you are already running a Redis instance on your system. Try shutting it down.
 
@@ -128,7 +148,6 @@ $ sudo systemctl stop redis-server
 ```
 
 or
-
 
 ```
 $ sudo service redis-server stop
@@ -146,31 +165,31 @@ If you manually installed and started Redis, you will need to manually stop it.
 $ redis-cli shutdown
 ```
 
-* `docker: Error response from daemon: Conflict. The container name "/redis-stack-server" is already in use by container "1ccdeb3adf2259168a5f74697013eaab8d61fb18e123e0a4d06545ac4269cc94". You have to remove (or rename) that container to be able to reuse that name.`
+- `docker: Error response from daemon: Conflict. The container name "/redis-stack-server" is already in use by container "1ccdeb3adf2259168a5f74697013eaab8d61fb18e123e0a4d06545ac4269cc94". You have to remove (or rename) that container to be able to reuse that name.`
 
 This error indicates that the `redis-stack-server` container is already running. This is likely because you have already ran the playground, but a `topos-playground clean` was never ran. To fix this, run `topos-playground clean` and then try again.
 
 This may also sometimes occur if you have a local redis instance running. Refer to the instructions above for how to shut down a local redis instance.
 
-* `Error: service "contracts-incal" didn't complete successfully: exit 1`
+- `Error: service "contracts-incal" didn't complete successfully: exit 1`
 
 One cause of this error is a previous failure when starting the playground that wasn't cleaned up by running `topos-playground clean`. To fix this, run `topos-playground clean` and then try again.
 
-* `Error: info: unknown shorthand flag: 'd' in -d`
+- `Error: info: unknown shorthand flag: 'd' in -d`
 
 If you see this error, you likely do not have Docker Compose installed. You need version 2 or greater. Refer to the [Docker Compose installation instructions](https://docs.docker.com/compose/install/) for your platform.
 
-* `Error: failed to create network local-erc20-messaging-infra-docker: Error response from daemon: could not find an available, non-overlapping IPv4 address pool among the defaults to assign to the network`
+- `Error: failed to create network local-erc20-messaging-infra-docker: Error response from daemon: could not find an available, non-overlapping IPv4 address pool among the defaults to assign to the network`
 
 The likely cause of this error is that you are running a VPN of some sort.
 
 The quick fix for this is to shut down your VPN, and then try to run the playground again.
 
-* `Error: Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?`
+- `Error: Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?`
 
 If this error occurs, it likely means that your `dockerd` daemon is not running. Please consult the documentation for your OS and Docker installation to determine how to correctly restart it for your platform.
 
-* `Error: Error response from daemon: driver failed programming external connectivity on endpoint infra-tce-boot-1 (145130455efa244316eb0570064adb584e2c99d18fa2cd8f58b2774f1144d2bb):  (iptables failed: iptables --wait -t nat -A DOCKER -p tcp -d 0/0 --dport 32807 -j DNAT --to-destination 172.21.0.9:9090 ! -i br-de97b637b33b: iptables v1.8.7 (nf_tables): unknown option "--to-destination"`
+- `Error: Error response from daemon: driver failed programming external connectivity on endpoint infra-tce-boot-1 (145130455efa244316eb0570064adb584e2c99d18fa2cd8f58b2774f1144d2bb):  (iptables failed: iptables --wait -t nat -A DOCKER -p tcp -d 0/0 --dport 32807 -j DNAT --to-destination 172.21.0.9:9090 ! -i br-de97b637b33b: iptables v1.8.7 (nf_tables): unknown option "--to-destination"`
 
 If this error occurs, you are running Linux, and you have recently done an OS upgrade, try rebooting your system. If the problem persists, first ensure that you can load the 'xt_nat' kernel module:
 
